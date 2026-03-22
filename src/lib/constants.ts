@@ -30,6 +30,6 @@ export const DEFAULT_SEARCH_PARAMS = {
   query: "",
   storyType: "all" as const,
   dateRange: "all" as const,
-  sortBy: "relevance" as const,
+  sortBy: "date_desc" as const,
   page: 0,
 };
