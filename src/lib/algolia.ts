@@ -33,9 +33,9 @@ export function buildAlgoliaURL(
   const fullQuery = query ? `Japan ${query}` : "Japan";
 
   // Choose endpoint based on sort preference
-  // Points and comments require client-side sorting on search results (not available as Algolia endpoints)
-  const endpoint =
-    sortBy === "date_desc" || sortBy === "date_asc" ? "search_by_date" : "search";
+  // date_desc uses search_by_date (returns newest-first by default)
+  // date_asc, points, and comments require client-side sorting on search results
+  const endpoint = sortBy === "date_desc" ? "search_by_date" : "search";
   const baseUrl = `${ALGOLIA_API_BASE}/${endpoint}`;
 
   const params = new URLSearchParams({
