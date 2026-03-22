@@ -32,7 +32,7 @@ function getStoryAccentClass(tags: string[]): string {
 
 export function StoryCard({ story, index = 0 }: StoryCardProps) {
   const domain = getDomain(story.url);
-  const hnUrl = `https://news.ycombinator.com/item?id=${story.story_id}`;
+  const hnUrl = `https://news.ycombinator.com/item?id=${story.objectID}`;
   const badgeClass = getStoryBadgeClass(story._tags);
   const typeLabel = getStoryTypeLabel(story._tags);
 

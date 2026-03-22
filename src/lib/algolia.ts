@@ -45,6 +45,9 @@ export function buildAlgoliaURL(
   // Add story type filter (exclude all others)
   if (storyType !== "all") {
     params.append("tags", storyType);
+  } else {
+    // Exclude comments — they lack a title field and break card rendering
+    params.append("tags", "(story,ask_hn,show_hn,job)");
   }
 
   // Add date range filter
