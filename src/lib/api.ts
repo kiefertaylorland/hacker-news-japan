@@ -24,8 +24,13 @@ export async function searchStories(options: SearchOptions): Promise<AlgoliaResp
 
   const data = await fetchFromAlgolia(url);
 
-  // Only apply client-side sorting for date_asc (search_by_date always returns newest-first)
-  if (options.sortBy === "date_asc") {
+  // Apply client-side sorting for points, comments (search endpoint returns by relevance)
+  // and date_asc (search_by_date endpoint returns newest-first, must be reversed)
+  if (
+    options.sortBy === "points" ||
+    options.sortBy === "comments" ||
+    options.sortBy === "date_asc"
+  ) {
     data.hits = sortHitsByStrategy(data.hits, options.sortBy);
   }
 
