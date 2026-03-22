@@ -24,7 +24,7 @@ export async function searchStories(options: SearchOptions): Promise<AlgoliaResp
 
   const data = await fetchFromAlgolia(url);
 
-  if (options.sortBy === "points" || options.sortBy === "comments") {
+  if (options.sortBy === "points" || options.sortBy === "comments" || options.sortBy === "date_asc") {
     data.hits = sortHitsByStrategy(data.hits, options.sortBy);
   }
 
