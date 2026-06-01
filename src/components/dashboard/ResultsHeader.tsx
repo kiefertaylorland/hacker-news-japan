@@ -1,6 +1,7 @@
 "use client";
 
 import type { AlgoliaResponse } from "@/lib/types";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ResultsHeaderProps {
   query: string;
@@ -10,9 +11,7 @@ interface ResultsHeaderProps {
 
 export function ResultsHeader({ query, results, isLoading }: ResultsHeaderProps) {
   if (isLoading) {
-    return (
-      <div className="h-6 w-48 rounded bg-white/10 animate-pulse" />
-    );
+    return <Skeleton className="h-6 w-48" />;
   }
 
   if (!results) {
@@ -22,23 +21,27 @@ export function ResultsHeader({ query, results, isLoading }: ResultsHeaderProps)
   const count = results.nbHits;
 
   return (
-    <div className="flex items-center justify-between gap-4 animate-fade-in">
+    <div className="flex animate-fade-in items-center justify-between gap-4">
       <div className="flex items-center gap-3">
-        <div className="w-1 h-5 rounded-full bg-hn/70 shrink-0" />
+        <div className="h-5 w-1 shrink-0 rounded-full bg-hn/70" />
         <p className="text-sm text-slate-400">
-          <span className="font-bold text-slate-100 tabular-nums">{count.toLocaleString()}</span>
+          <span className="font-bold tabular-nums text-slate-100">
+            {count.toLocaleString()}
+          </span>
           <span className="mx-1.5 text-slate-600">{count !== 1 ? "stories" : "story"}</span>
           {query ? (
             <>
               <span className="text-slate-600">matching</span>
-              <span className="ml-1.5 font-medium text-slate-200 bg-white/[0.06] rounded px-1.5 py-0.5 text-xs">{query}</span>
+              <span className="ml-1.5 rounded bg-white/[0.06] px-1.5 py-0.5 text-xs font-medium text-slate-200">
+                {query}
+              </span>
             </>
           ) : (
             <span className="text-slate-600">about Japan</span>
           )}
         </p>
       </div>
-      <div className="flex-1 h-px bg-white/[0.06]" />
+      <div className="h-px flex-1 bg-white/[0.06]" />
     </div>
   );
 }

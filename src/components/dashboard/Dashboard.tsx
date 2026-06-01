@@ -60,7 +60,7 @@ export function Dashboard() {
 
         {/* Error State */}
         {error && (
-          <div className="glass border-red-500/50 border bg-red-500/10 p-4 rounded-lg text-sm text-red-300">
+          <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-red-300 backdrop-blur-md">
             {error}
           </div>
         )}
