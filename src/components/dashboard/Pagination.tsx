@@ -2,6 +2,13 @@
 
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import type { AlgoliaResponse } from "@/lib/types";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  Pagination as PaginationRoot,
+  PaginationContent,
+  PaginationItem,
+} from "@/components/ui/pagination";
 
 interface PaginationProps {
   results: AlgoliaResponse | null;
@@ -24,50 +31,57 @@ export function Pagination({
   const canGoNext = currentPage < results.nbPages - 1;
 
   return (
-    <div className="flex items-center justify-center gap-2 mt-8">
-      <button
-        onClick={() => onPageChange(currentPage - 1)}
-        disabled={!canGoPrev || isLoading}
-        className={`glass-button flex items-center gap-1 ${
-          !canGoPrev || isLoading ? "opacity-50 cursor-not-allowed" : ""
-        }`}
-      >
-        <ChevronLeftIcon className="w-4 h-4" />
-        Previous
-      </button>
+    <PaginationRoot className="mt-8">
+      <PaginationContent className="gap-2">
+        <PaginationItem>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={!canGoPrev || isLoading}
+            className="gap-1 border border-white/10 bg-white/5 text-slate-300 backdrop-blur-md hover:bg-white/10 hover:text-slate-100"
+          >
+            <ChevronLeftIcon className="h-4 w-4" />
+            Previous
+          </Button>
+        </PaginationItem>
 
-      <div className="flex items-center gap-1">
         {Array.from({ length: Math.min(5, results.nbPages) }).map((_, i) => {
-          const pageNum = i;
-          const isActive = pageNum === currentPage;
-
+          const isActive = i === currentPage;
           return (
-            <button
-              key={pageNum}
-              onClick={() => onPageChange(pageNum)}
-              disabled={isLoading}
-              className={`px-2 py-1 rounded text-xs font-medium transition-all ${
-                isActive
-                  ? "glass bg-hn/15 border-hn/40 text-hn font-bold"
-                  : "glass bg-white/5 border-white/10 text-slate-400 hover:bg-white/[0.08] hover:border-white/20"
-              } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
-            >
-              {pageNum + 1}
-            </button>
+            <PaginationItem key={i}>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onPageChange(i)}
+                disabled={isLoading}
+                aria-current={isActive ? "page" : undefined}
+                className={cn(
+                  "h-8 w-8 border text-xs font-medium backdrop-blur-md",
+                  isActive
+                    ? "border-hn/40 bg-hn/15 text-hn shadow-[0_0_10px_rgba(255,102,0,0.12)] hover:bg-hn/20 hover:text-hn"
+                    : "border-white/10 bg-white/5 text-slate-400 hover:bg-white/10 hover:text-slate-200"
+                )}
+              >
+                {i + 1}
+              </Button>
+            </PaginationItem>
           );
         })}
-      </div>
 
-      <button
-        onClick={() => onPageChange(currentPage + 1)}
-        disabled={!canGoNext || isLoading}
-        className={`glass-button flex items-center gap-1 ${
-          !canGoNext || isLoading ? "opacity-50 cursor-not-allowed" : ""
-        }`}
-      >
-        Next
-        <ChevronRightIcon className="w-4 h-4" />
-      </button>
-    </div>
+        <PaginationItem>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={!canGoNext || isLoading}
+            className="gap-1 border border-white/10 bg-white/5 text-slate-300 backdrop-blur-md hover:bg-white/10 hover:text-slate-100"
+          >
+            Next
+            <ChevronRightIcon className="h-4 w-4" />
+          </Button>
+        </PaginationItem>
+      </PaginationContent>
+    </PaginationRoot>
   );
 }

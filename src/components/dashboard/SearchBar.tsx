@@ -1,6 +1,12 @@
 "use client";
 
 import { XIcon, SearchIcon } from "lucide-react";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 
 interface SearchBarProps {
   value: string;
@@ -14,24 +20,29 @@ export function SearchBar({
   placeholder = "Search Japan stories...",
 }: SearchBarProps) {
   return (
-    <div className="relative group">
-      <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-hn transition-colors duration-200" />
-      <input
+    <InputGroup className="h-12 rounded-xl border-white/10 bg-white/5 shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md transition-colors has-[[data-slot=input-group-control]:focus-visible]:border-hn/50 has-[[data-slot=input-group-control]:focus-visible]:ring-hn/30">
+      <InputGroupAddon>
+        <SearchIcon className="text-slate-500 transition-colors group-has-[[data-slot=input-group-control]:focus-visible]/input-group:text-hn" />
+      </InputGroupAddon>
+      <InputGroupInput
         type="text"
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="glass-input w-full pl-10 py-3 pr-10 placeholder-slate-500 focus:ring-1 focus:ring-hn/30 focus:border-hn/50"
+        className="text-base text-slate-100 placeholder:text-slate-500"
       />
       {value && (
-        <button
-          onClick={() => onChange("")}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors"
-          aria-label="Clear search"
-        >
-          <XIcon className="w-4 h-4" />
-        </button>
+        <InputGroupAddon align="inline-end">
+          <InputGroupButton
+            size="icon-xs"
+            aria-label="Clear search"
+            onClick={() => onChange("")}
+            className="text-slate-400 hover:bg-white/10 hover:text-slate-100"
+          >
+            <XIcon />
+          </InputGroupButton>
+        </InputGroupAddon>
       )}
-    </div>
+    </InputGroup>
   );
 }
