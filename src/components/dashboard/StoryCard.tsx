@@ -33,15 +33,26 @@ function getStoryAccentClass(tags: string[]): string {
   return "border-l-hn/50";
 }
 
+function getStoryUrl(url: string | null, fallbackUrl: string): string {
+  if (!url) return fallbackUrl;
+  try {
+    const parsedUrl = new URL(url);
+    return parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:" ? url : fallbackUrl;
+  } catch {
+    return fallbackUrl;
+  }
+}
+
 export function StoryCard({ story, index = 0 }: StoryCardProps) {
   const domain = getDomain(story.url);
   const hnUrl = `https://news.ycombinator.com/item?id=${story.objectID}`;
+  const storyUrl = getStoryUrl(story.url, hnUrl);
   const badgeClass = getStoryBadgeClass(story._tags);
   const typeLabel = getStoryTypeLabel(story._tags);
 
   return (
     <a
-      href={hnUrl}
+      href={storyUrl}
       target="_blank"
       rel="noopener noreferrer"
       style={{ animationDelay: `${Math.min(index * 40, 320)}ms` }}
