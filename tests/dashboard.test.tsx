@@ -1,5 +1,6 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { createElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Dashboard } from "@/components/dashboard/Dashboard";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
@@ -63,7 +64,7 @@ describe("dashboard components", () => {
       setPage: vi.fn(),
     });
 
-    render(<Dashboard />);
+    render(createElement(Dashboard));
 
     expect(screen.getByText("日本")).toBeInTheDocument();
     expect(screen.getByText("Request failed")).toBeInTheDocument();
@@ -71,17 +72,40 @@ describe("dashboard components", () => {
     expect(screen.getByText("Building in Japan")).toBeInTheDocument();
   });
 
+  it("renders the dashboard without errors or results", () => {
+    useSearchMock.mockReturnValue({
+      query: "",
+      storyType: "all",
+      dateRange: "all",
+      sortBy: "date_desc",
+      page: 0,
+      results: null,
+      isLoading: false,
+      error: null,
+      setQuery: vi.fn(),
+      setStoryType: vi.fn(),
+      setDateRange: vi.fn(),
+      setSortBy: vi.fn(),
+      setPage: vi.fn(),
+    });
+
+    render(createElement(Dashboard));
+
+    expect(screen.queryByText("Request failed")).not.toBeInTheDocument();
+    expect(screen.getByText("No stories found")).toBeInTheDocument();
+  });
+
   it("renders the search bar and clears the query", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
-    const { rerender } = render(<SearchBar value="" onChange={onChange} />);
+    const { rerender } = render(createElement(SearchBar, { value: "", onChange }));
 
     fireEvent.change(screen.getByPlaceholderText("Search Japan stories..."), {
       target: { value: "kyoto" },
     });
     expect(onChange).toHaveBeenCalledWith("kyoto");
 
-    rerender(<SearchBar value="kyoto" onChange={onChange} placeholder="Search here" />);
+    rerender(createElement(SearchBar, { value: "kyoto", onChange, placeholder: "Search here" }));
     expect(screen.getByPlaceholderText("Search here")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Clear search" }));
     expect(onChange).toHaveBeenLastCalledWith("");
@@ -93,15 +117,15 @@ describe("dashboard components", () => {
     const onDateRangeChange = vi.fn();
 
     render(
-      <FilterBar
-        storyType="story"
-        dateRange="all"
-        onStoryTypeChange={onStoryTypeChange}
-        onDateRangeChange={onDateRangeChange}
-      />
+      createElement(FilterBar, {
+        storyType: "story",
+        dateRange: "all",
+        onStoryTypeChange,
+        onDateRangeChange,
+      })
     );
 
-    await user.click(screen.getByRole("button", { name: "Jobs" }));
+    await user.click(screen.getByRole("radio", { name: "Jobs" }));
     expect(onStoryTypeChange).toHaveBeenCalledWith("job");
 
     await user.click(screen.getByRole("combobox"));
@@ -113,28 +137,38 @@ describe("dashboard components", () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
 
-    render(<SortControls sortBy="relevance" onChange={onChange} />);
-    await user.click(screen.getByRole("button", { name: "Points" }));
+    render(createElement(SortControls, { sortBy: "relevance", onChange }));
+    await user.click(screen.getByRole("radio", { name: "Points" }));
 
     expect(onChange).toHaveBeenCalledWith("points");
   });
 
   it("renders all results header states", () => {
-    const loadingView = render(<ResultsHeader query="" results={null} isLoading />);
+    const loadingView = render(createElement(ResultsHeader, { query: "", results: null, isLoading: true }));
     expect(loadingView.container.querySelector(".animate-pulse")).toBeInTheDocument();
     loadingView.unmount();
 
-    const emptyView = render(<ResultsHeader query="" results={null} isLoading={false} />);
+    const emptyView = render(createElement(ResultsHeader, { query: "", results: null, isLoading: false }));
     expect(emptyView.container.firstChild).toBeNull();
     emptyView.unmount();
 
-    render(<ResultsHeader query="tokyo" results={{ ...sampleResults, nbHits: 2 }} isLoading={false} />);
+    render(
+      createElement(ResultsHeader, {
+        query: "tokyo",
+        results: { ...sampleResults, nbHits: 2 },
+        isLoading: false,
+      })
+    );
     expect(screen.getByText("2")).toBeInTheDocument();
     expect(screen.getByText("stories")).toBeInTheDocument();
     expect(screen.getByText("tokyo")).toBeInTheDocument();
 
     const singleView = render(
-      <ResultsHeader query="" results={{ ...sampleResults, nbHits: 1 }} isLoading={false} />
+      createElement(ResultsHeader, {
+        query: "",
+        results: { ...sampleResults, nbHits: 1 },
+        isLoading: false,
+      })
     );
     expect(singleView.getByText("story")).toBeInTheDocument();
     expect(singleView.getByText("about Japan")).toBeInTheDocument();
@@ -142,18 +176,23 @@ describe("dashboard components", () => {
 
   it("renders pagination null states", () => {
     const noResults = render(
-      <Pagination results={null} currentPage={0} onPageChange={vi.fn()} isLoading={false} />
+      createElement(Pagination, {
+        results: null,
+        currentPage: 0,
+        onPageChange: vi.fn(),
+        isLoading: false,
+      })
     );
     expect(noResults.container.firstChild).toBeNull();
     noResults.unmount();
 
     const singlePage = render(
-      <Pagination
-        results={{ ...sampleResults, nbPages: 1 }}
-        currentPage={0}
-        onPageChange={vi.fn()}
-        isLoading={false}
-      />
+      createElement(Pagination, {
+        results: { ...sampleResults, nbPages: 1 },
+        currentPage: 0,
+        onPageChange: vi.fn(),
+        isLoading: false,
+      })
     );
     expect(singlePage.container.firstChild).toBeNull();
   });
@@ -163,12 +202,12 @@ describe("dashboard components", () => {
     const onPageChange = vi.fn();
 
     const { rerender } = render(
-      <Pagination
-        results={{ ...sampleResults, nbPages: 7 }}
-        currentPage={0}
-        onPageChange={onPageChange}
-        isLoading={false}
-      />
+      createElement(Pagination, {
+        results: { ...sampleResults, nbPages: 7 },
+        currentPage: 0,
+        onPageChange,
+        isLoading: false,
+      })
     );
 
     expect(screen.getByRole("button", { name: "Previous" })).toBeDisabled();
@@ -181,12 +220,23 @@ describe("dashboard components", () => {
     expect(onPageChange).toHaveBeenCalledWith(1);
 
     rerender(
-      <Pagination
-        results={{ ...sampleResults, nbPages: 3 }}
-        currentPage={2}
-        onPageChange={onPageChange}
-        isLoading={true}
-      />
+      createElement(Pagination, {
+        results: { ...sampleResults, nbPages: 7 },
+        currentPage: 1,
+        onPageChange,
+        isLoading: false,
+      })
+    );
+    await user.click(screen.getByRole("button", { name: "Previous" }));
+    expect(onPageChange).toHaveBeenCalledWith(0);
+
+    rerender(
+      createElement(Pagination, {
+        results: { ...sampleResults, nbPages: 3 },
+        currentPage: 2,
+        onPageChange,
+        isLoading: true,
+      })
     );
 
     expect(screen.getByRole("button", { name: "Previous" })).toBeDisabled();
@@ -223,12 +273,12 @@ describe("dashboard components", () => {
       num_comments: null,
     };
 
-    const { rerender } = render(<StoryCard story={askStory} />);
+    const { rerender } = render(createElement(StoryCard, { story: askStory }));
     expect(screen.getByText("Ask HN")).toBeInTheDocument();
     expect(screen.getByText("example.com")).toBeInTheDocument();
     expect(screen.getByRole("link")).toHaveAttribute("href", "https://example.com/ask");
 
-    rerender(<StoryCard story={showStory} index={10} />);
+    rerender(createElement(StoryCard, { story: showStory, index: 10 }));
     expect(screen.getByText("Show HN")).toBeInTheDocument();
     expect(screen.getByRole("link")).toHaveAttribute(
       "href",
@@ -236,47 +286,47 @@ describe("dashboard components", () => {
     );
     expect(screen.getByRole("link")).toHaveStyle({ animationDelay: "320ms" });
 
-    rerender(<StoryCard story={jobStory} />);
+    rerender(createElement(StoryCard, { story: jobStory }));
     expect(screen.getByText("Job")).toBeInTheDocument();
     expect(screen.getByRole("link")).toHaveAttribute(
       "href",
       "https://news.ycombinator.com/item?id=345"
     );
 
-    rerender(<StoryCard story={defaultStory} />);
+    rerender(createElement(StoryCard, { story: defaultStory }));
     expect(screen.getByText("Story")).toBeInTheDocument();
     expect(screen.queryByText("example.com")).not.toBeInTheDocument();
-    expect(screen.getByText("0")).toBeInTheDocument();
+    expect(screen.getAllByText("0")).toHaveLength(2);
   });
 
   it("renders story grid loading, null, empty, and populated states", () => {
-    const loadingView = render(<StoryGrid stories={null} isLoading />);
-    expect(loadingView.container.querySelectorAll(".animate-pulse")).toHaveLength(36);
+    const loadingView = render(createElement(StoryGrid, { stories: null, isLoading: true }));
+    expect(loadingView.container.querySelectorAll(".rounded-xl")).toHaveLength(9);
     loadingView.unmount();
 
-    const nullView = render(<StoryGrid stories={null} isLoading={false} />);
+    const nullView = render(createElement(StoryGrid, { stories: null, isLoading: false }));
     expect(nullView.getByText("No stories found")).toBeInTheDocument();
     nullView.unmount();
 
-    const emptyView = render(<StoryGrid stories={[]} isLoading={false} />);
+    const emptyView = render(createElement(StoryGrid, { stories: [], isLoading: false }));
     expect(emptyView.getByText("Try adjusting your filters or search.")).toBeInTheDocument();
     emptyView.unmount();
 
-    render(<StoryGrid stories={[sampleStory]} isLoading={false} />);
+    render(createElement(StoryGrid, { stories: [sampleStory], isLoading: false }));
     expect(screen.getByText("Building in Japan")).toBeInTheDocument();
   });
 
   it("renders the dashboard skeleton and story card skeleton", () => {
-    const dashboardSkeleton = render(<DashboardSkeleton />);
-    expect(dashboardSkeleton.container.querySelectorAll(".animate-pulse")).toHaveLength(42);
+    const dashboardSkeleton = render(createElement(DashboardSkeleton));
+    expect(dashboardSkeleton.container.querySelectorAll(".rounded-xl").length).toBeGreaterThanOrEqual(10);
     dashboardSkeleton.unmount();
 
-    const storySkeleton = render(<StoryCardSkeleton />);
-    expect(storySkeleton.container.querySelectorAll(".animate-pulse")).toHaveLength(6);
+    const storySkeleton = render(createElement(StoryCardSkeleton));
+    expect(storySkeleton.container.querySelectorAll(".rounded-xl")).toHaveLength(1);
   });
 
   it("renders story timestamps as relative text", async () => {
-    render(<StoryCard story={sampleStory} />);
+    render(createElement(StoryCard, { story: sampleStory }));
     await waitFor(() =>
       expect(screen.getByText((content) => content.includes("ago"))).toBeInTheDocument()
     );

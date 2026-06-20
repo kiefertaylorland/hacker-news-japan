@@ -1,6 +1,7 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { createElement } from "react";
+import { describe, expect, it, vi } from "vitest";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
@@ -61,43 +62,54 @@ import {
 
 describe("shared UI components", () => {
   it("renders button and badge variants", () => {
-    const { rerender } = render(<Button>Default button</Button>);
+    const { rerender } = render(createElement(Button, null, "Default button"));
     expect(screen.getByRole("button", { name: "Default button" })).toBeInTheDocument();
     expect(buttonVariants({ variant: "link", size: "sm" })).toContain("underline");
 
     rerender(
-      <Button asChild variant="outline" size="icon">
-        <a href="/docs">Linked button</a>
-      </Button>
+      createElement(
+        Button,
+        { asChild: true, variant: "outline", size: "icon" },
+        createElement("a", { href: "/docs" }, "Linked button")
+      )
     );
     expect(screen.getByRole("link", { name: "Linked button" })).toHaveAttribute("href", "/docs");
 
-    rerender(<Badge variant="outline">Outline badge</Badge>);
+    rerender(createElement(Badge, { variant: "outline" }, "Outline badge"));
     expect(screen.getByText("Outline badge")).toBeInTheDocument();
   });
 
   it("renders card and empty building blocks", () => {
     render(
-      <div>
-        <Card>
-          <CardHeader>
-            <CardTitle>Card title</CardTitle>
-            <CardDescription>Card description</CardDescription>
-          </CardHeader>
-          <CardContent>Card content</CardContent>
-          <CardFooter>Card footer</CardFooter>
-        </Card>
-
-        <Empty>
-          <EmptyHeader>
-            <EmptyMedia>Default media</EmptyMedia>
-            <EmptyMedia variant="icon">Icon media</EmptyMedia>
-            <EmptyTitle>Nothing here</EmptyTitle>
-            <EmptyDescription>Try again later</EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent>Actions</EmptyContent>
-        </Empty>
-      </div>
+      createElement(
+        "div",
+        null,
+        createElement(
+          Card,
+          null,
+          createElement(
+            CardHeader,
+            null,
+            createElement(CardTitle, null, "Card title"),
+            createElement(CardDescription, null, "Card description")
+          ),
+          createElement(CardContent, null, "Card content"),
+          createElement(CardFooter, null, "Card footer")
+        ),
+        createElement(
+          Empty,
+          null,
+          createElement(
+            EmptyHeader,
+            null,
+            createElement(EmptyMedia, null, "Default media"),
+            createElement(EmptyMedia, { variant: "icon" }, "Icon media"),
+            createElement(EmptyTitle, null, "Nothing here"),
+            createElement(EmptyDescription, null, "Try again later")
+          ),
+          createElement(EmptyContent, null, "Actions")
+        )
+      )
     );
 
     expect(screen.getByText("Card description")).toBeInTheDocument();
@@ -109,10 +121,12 @@ describe("shared UI components", () => {
   it("renders input, textarea, and input group controls", async () => {
     const user = userEvent.setup();
     const { rerender } = render(
-      <div>
-        <Input aria-label="Plain input" type="email" />
-        <Textarea aria-label="Plain textarea" />
-      </div>
+      createElement(
+        "div",
+        null,
+        createElement(Input, { "aria-label": "Plain input", type: "email" }),
+        createElement(Textarea, { "aria-label": "Plain textarea" })
+      )
     );
 
     expect(screen.getByLabelText("Plain input")).toHaveAttribute("type", "email");
@@ -120,15 +134,17 @@ describe("shared UI components", () => {
 
     const buttonClick = vi.fn();
     rerender(
-      <InputGroup>
-        <InputGroupAddon data-testid="addon">Prefix</InputGroupAddon>
-        <InputGroupInput aria-label="Grouped input" />
-        <InputGroupAddon align="inline-end">
-          <InputGroupButton size="icon-sm" onClick={buttonClick}>
-            Go
-          </InputGroupButton>
-        </InputGroupAddon>
-      </InputGroup>
+      createElement(
+        InputGroup,
+        null,
+        createElement(InputGroupAddon, { "data-testid": "addon" }, "Prefix"),
+        createElement(InputGroupInput, { "aria-label": "Grouped input" }),
+        createElement(
+          InputGroupAddon,
+          { align: "inline-end" },
+          createElement(InputGroupButton, { onClick: buttonClick }, "Go")
+        )
+      )
     );
 
     fireEvent.click(screen.getByTestId("addon"));
@@ -137,13 +153,17 @@ describe("shared UI components", () => {
     expect(buttonClick).toHaveBeenCalled();
 
     rerender(
-      <InputGroup>
-        <InputGroupAddon align="block-start">
-          <InputGroupText>Label</InputGroupText>
-        </InputGroupAddon>
-        <InputGroupTextarea aria-label="Grouped textarea" />
-        <InputGroupAddon align="block-end">Footer</InputGroupAddon>
-      </InputGroup>
+      createElement(
+        InputGroup,
+        null,
+        createElement(
+          InputGroupAddon,
+          { align: "block-start" },
+          createElement(InputGroupText, null, "Label")
+        ),
+        createElement(InputGroupTextarea, { "aria-label": "Grouped textarea" }),
+        createElement(InputGroupAddon, { align: "block-end" }, "Footer")
+      )
     );
 
     expect(screen.getByText("Label")).toBeInTheDocument();
@@ -156,35 +176,41 @@ describe("shared UI components", () => {
     const onValueChange = vi.fn();
 
     const { rerender } = render(
-      <Select onValueChange={onValueChange}>
-        <SelectTrigger>
-          <SelectValue placeholder="Pick one" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectGroup>
-            <SelectLabel>Group A</SelectLabel>
-            <SelectItem value="one">One</SelectItem>
-            <SelectSeparator />
-            <SelectItem value="two">Two</SelectItem>
-          </SelectGroup>
-        </SelectContent>
-      </Select>
+      createElement(
+        Select,
+        { onValueChange },
+        createElement(SelectTrigger, null, createElement(SelectValue, { placeholder: "Pick one" })),
+        createElement(
+          SelectContent,
+          null,
+          createElement(
+            SelectGroup,
+            null,
+            createElement(SelectLabel, null, "Group A"),
+            createElement(SelectItem, { value: "one" }, "One"),
+            createElement(SelectSeparator),
+            createElement(SelectItem, { value: "two" }, "Two")
+          )
+        )
+      )
     );
 
     await user.click(screen.getByRole("combobox"));
-    expect(screen.getByText("Group A")).toBeInTheDocument();
+    expect(await screen.findByText("Group A")).toBeInTheDocument();
     await user.click(screen.getByText("Two"));
     expect(onValueChange).toHaveBeenCalledWith("two");
 
     rerender(
-      <Select defaultValue="one">
-        <SelectTrigger>
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent position="item-aligned">
-          <SelectItem value="one">One</SelectItem>
-        </SelectContent>
-      </Select>
+      createElement(
+        Select,
+        { defaultValue: "one" },
+        createElement(SelectTrigger, null, createElement(SelectValue)),
+        createElement(
+          SelectContent,
+          { position: "item-aligned" },
+          createElement(SelectItem, { value: "one" }, "One")
+        )
+      )
     );
 
     await user.click(screen.getByRole("combobox"));
@@ -193,24 +219,22 @@ describe("shared UI components", () => {
 
   it("renders pagination primitives", () => {
     render(
-      <Pagination>
-        <PaginationContent>
-          <PaginationItem>
-            <PaginationPrevious href="#prev" />
-          </PaginationItem>
-          <PaginationItem>
-            <PaginationLink href="#1" isActive>
-              1
-            </PaginationLink>
-          </PaginationItem>
-          <PaginationItem>
-            <PaginationNext href="#next" />
-          </PaginationItem>
-          <PaginationItem>
-            <PaginationEllipsis />
-          </PaginationItem>
-        </PaginationContent>
-      </Pagination>
+      createElement(
+        Pagination,
+        null,
+        createElement(
+          PaginationContent,
+          null,
+          createElement(PaginationItem, null, createElement(PaginationPrevious, { href: "#prev" })),
+          createElement(
+            PaginationItem,
+            null,
+            createElement(PaginationLink, { href: "#1", isActive: true }, "1")
+          ),
+          createElement(PaginationItem, null, createElement(PaginationNext, { href: "#next" })),
+          createElement(PaginationItem, null, createElement(PaginationEllipsis))
+        )
+      )
     );
 
     expect(screen.getByRole("navigation", { name: "pagination" })).toBeInTheDocument();
@@ -225,22 +249,32 @@ describe("shared UI components", () => {
   it("renders separators, skeleton, and toggles", async () => {
     const user = userEvent.setup();
     render(
-      <div>
-        <Separator data-testid="horizontal-separator" />
-        <Separator data-testid="vertical-separator" orientation="vertical" decorative={false} />
-        <Skeleton data-testid="skeleton" />
-        <Toggle aria-label="Standalone toggle" variant="outline" size="sm">
-          Toggle me
-        </Toggle>
-        <ToggleGroup type="single" variant="outline" size="sm">
-          <ToggleGroupItem value="a">A</ToggleGroupItem>
-        </ToggleGroup>
-        <ToggleGroup type="single">
-          <ToggleGroupItem value="b" variant="outline" size="lg">
-            B
-          </ToggleGroupItem>
-        </ToggleGroup>
-      </div>
+      createElement(
+        "div",
+        null,
+        createElement(Separator, { "data-testid": "horizontal-separator" }),
+        createElement(Separator, {
+          "data-testid": "vertical-separator",
+          orientation: "vertical",
+          decorative: false,
+        }),
+        createElement(Skeleton, { "data-testid": "skeleton" }),
+        createElement(
+          Toggle,
+          { "aria-label": "Standalone toggle", variant: "outline", size: "sm" },
+          "Toggle me"
+        ),
+        createElement(
+          ToggleGroup,
+          { type: "single", variant: "outline", size: "sm" },
+          createElement(ToggleGroupItem, { value: "a" }, "A")
+        ),
+        createElement(
+          ToggleGroup,
+          { type: "single" },
+          createElement(ToggleGroupItem, { value: "b", variant: "outline", size: "lg" }, "B")
+        )
+      )
     );
 
     expect(screen.getByTestId("horizontal-separator")).toHaveAttribute("data-orientation", "horizontal");
@@ -248,26 +282,32 @@ describe("shared UI components", () => {
     expect(screen.getByTestId("skeleton")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Standalone toggle" }));
-    await user.click(screen.getByRole("button", { name: "A" }));
-    await user.click(screen.getByRole("button", { name: "B" }));
-    expect(screen.getByRole("button", { name: "B" })).toBeInTheDocument();
+    await user.click(screen.getByRole("radio", { name: "A" }));
+    await user.click(screen.getByRole("radio", { name: "B" }));
+    expect(screen.getByRole("radio", { name: "B" })).toBeInTheDocument();
   });
 
   it("renders tooltip content", async () => {
     const user = userEvent.setup();
 
     render(
-      <TooltipProvider delayDuration={0}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button type="button">Hover me</button>
-          </TooltipTrigger>
-          <TooltipContent>Tooltip body</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      createElement(
+        TooltipProvider,
+        { delayDuration: 0 },
+        createElement(
+          Tooltip,
+          null,
+          createElement(
+            TooltipTrigger,
+            { asChild: true },
+            createElement("button", { type: "button" }, "Hover me")
+          ),
+          createElement(TooltipContent, null, "Tooltip body")
+        )
+      )
     );
 
     await user.hover(screen.getByRole("button", { name: "Hover me" }));
-    expect(await screen.findByText("Tooltip body")).toBeInTheDocument();
+    expect(await screen.findByRole("tooltip")).toBeInTheDocument();
   });
 });

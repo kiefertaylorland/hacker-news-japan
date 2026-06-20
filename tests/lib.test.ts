@@ -150,6 +150,36 @@ describe("lib utilities and API helpers", () => {
     }
   );
 
+  it("sorts null point and comment values as zero", () => {
+    const nullableHits: HNStory[] = [
+      {
+        ...sampleHits[0],
+        objectID: "3",
+        points: null,
+        num_comments: null,
+      },
+      sampleHits[1],
+    ];
+
+    expect(sortHitsByStrategy(nullableHits, "points").map((hit) => hit.objectID)).toEqual([
+      "2",
+      "3",
+    ]);
+    expect(sortHitsByStrategy(nullableHits, "comments").map((hit) => hit.objectID)).toEqual([
+      "2",
+      "3",
+    ]);
+
+    const reversedNullableHits = [sampleHits[1], nullableHits[0]];
+    expect(sortHitsByStrategy(reversedNullableHits, "points").map((hit) => hit.objectID)).toEqual([
+      "2",
+      "3",
+    ]);
+    expect(
+      sortHitsByStrategy(reversedNullableHits, "comments").map((hit) => hit.objectID)
+    ).toEqual(["2", "3"]);
+  });
+
   it.each(["points", "comments", "date_asc"] satisfies SortBy[])(
     "applies client-side sorting for %s searches",
     async (sortBy) => {

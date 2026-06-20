@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
@@ -8,11 +9,11 @@ vi.mock("next/font/google", () => ({
 }));
 
 vi.mock("@/components/dashboard/Dashboard", () => ({
-  Dashboard: () => <div>Dashboard content</div>,
+  Dashboard: () => createElement("div", null, "Dashboard content"),
 }));
 
 vi.mock("@/components/dashboard/DashboardSkeleton", () => ({
-  DashboardSkeleton: () => <div>Dashboard skeleton</div>,
+  DashboardSkeleton: () => createElement("div", null, "Dashboard skeleton"),
 }));
 
 import Loading from "@/app/loading";
@@ -21,20 +22,18 @@ import Home from "@/app/page";
 
 describe("app entry points", () => {
   it("renders the home page", () => {
-    render(<Home />);
+    render(createElement(Home));
     expect(screen.getByText("Dashboard content")).toBeInTheDocument();
   });
 
   it("renders the loading page", () => {
-    render(<Loading />);
+    render(createElement(Loading));
     expect(screen.getByText("Dashboard skeleton")).toBeInTheDocument();
   });
 
   it("renders the root layout and exports metadata", () => {
     const markup = renderToStaticMarkup(
-      <RootLayout>
-        <main>Child content</main>
-      </RootLayout>
+      createElement(RootLayout, null, createElement("main", null, "Child content"))
     );
 
     expect(markup).toContain('lang="en"');
