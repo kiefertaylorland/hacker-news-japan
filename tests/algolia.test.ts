@@ -121,11 +121,9 @@ describe("fetchFromAlgolia", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const result = await fetchFromAlgolia(url);
-    const [, fetchOptions] = fetchMock.mock.calls[0];
 
     expect(result).toEqual(payload);
     expect(fetchMock).toHaveBeenCalledWith(url, undefined);
-    expect(fetchOptions).toBeUndefined();
   });
 
   it("sends the identifying User-Agent outside browsers", async () => {
