@@ -16,7 +16,6 @@ export default defineConfig({
     setupFiles: ["./tests/setup.ts"],
     coverage: {
       provider: "istanbul",
-      all: true,
       include: ["src/**/*.{ts,tsx}"],
       exclude: ["src/**/*.d.ts"],
       reportsDirectory: path.join(os.tmpdir(), "hacker-news-japan-coverage"),
