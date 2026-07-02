@@ -111,7 +111,24 @@ describe("buildAlgoliaURL", () => {
 });
 
 describe("fetchFromAlgolia", () => {
-  it("returns parsed JSON and sends the identifying User-Agent", async () => {
+  it("returns parsed JSON without browser-forbidden headers", async () => {
+    const payload = { hits: [], nbHits: 0, nbPages: 0, page: 0, hitsPerPage: 30, query: "Japan" };
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(payload),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await fetchFromAlgolia("https://hn.algolia.com/api/v1/search?query=Japan");
+
+    expect(result).toEqual(payload);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://hn.algolia.com/api/v1/search?query=Japan"
+    );
+  });
+
+  it("sends the identifying User-Agent outside browsers", async () => {
+    vi.stubGlobal("window", undefined);
     const payload = { hits: [], nbHits: 0, nbPages: 0, page: 0, hitsPerPage: 30, query: "Japan" };
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,

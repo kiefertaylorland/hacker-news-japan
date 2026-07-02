@@ -69,11 +69,13 @@ export function buildAlgoliaURL(
 export async function fetchFromAlgolia(
   url: string
 ): Promise<AlgoliaResponse> {
-  const response = await fetch(url, {
-    headers: {
-      "User-Agent": "HN-Japan-Dashboard/1.0",
-    },
-  });
+  const response = typeof window === "undefined"
+    ? await fetch(url, {
+      headers: {
+        "User-Agent": "HN-Japan-Dashboard/1.0",
+      },
+    })
+    : await fetch(url);
 
   if (!response.ok) {
     throw new Error(`Algolia API error: ${response.status}`);

@@ -115,11 +115,7 @@ describe("lib utilities and API helpers", () => {
       hits: sampleHits,
       nbHits: 2,
     });
-    expect(fetch).toHaveBeenCalledWith("https://example.com/search", {
-      headers: {
-        "User-Agent": "HN-Japan-Dashboard/1.0",
-      },
-    });
+    expect(fetch).toHaveBeenCalledWith("https://example.com/search");
 
     vi.stubGlobal(
       "fetch",
