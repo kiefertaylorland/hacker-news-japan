@@ -111,7 +111,7 @@ describe("buildAlgoliaURL", () => {
 });
 
 describe("fetchFromAlgolia", () => {
-  it("returns parsed JSON without browser-forbidden headers", async () => {
+  it("returns parsed JSON in browser context", async () => {
     const url = "https://hn.algolia.com/api/v1/search?query=Japan";
     const payload = { hits: [], nbHits: 0, nbPages: 0, page: 0, hitsPerPage: 30, query: "Japan" };
     const fetchMock = vi.fn().mockResolvedValue({
