@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { createElement } from "react";
+import { createElement, type ComponentProps } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -137,7 +137,7 @@ describe("shared UI components", () => {
       createElement(
         InputGroup,
         null,
-        createElement(InputGroupAddon, { "data-testid": "addon" }, "Prefix"),
+        createElement(InputGroupAddon, { "data-testid": "addon" } as ComponentProps<typeof InputGroupAddon>, "Prefix"),
         createElement(InputGroupInput, { "aria-label": "Grouped input" }),
         createElement(
           InputGroupAddon,
@@ -252,13 +252,13 @@ describe("shared UI components", () => {
       createElement(
         "div",
         null,
-        createElement(Separator, { "data-testid": "horizontal-separator" }),
+        createElement(Separator, { "data-testid": "horizontal-separator" } as ComponentProps<typeof Separator>),
         createElement(Separator, {
           "data-testid": "vertical-separator",
           orientation: "vertical",
           decorative: false,
-        }),
-        createElement(Skeleton, { "data-testid": "skeleton" }),
+        } as ComponentProps<typeof Separator>),
+        createElement(Skeleton, { "data-testid": "skeleton" } as ComponentProps<typeof Skeleton>),
         createElement(
           Toggle,
           { "aria-label": "Standalone toggle", variant: "outline", size: "sm" },
@@ -293,7 +293,7 @@ describe("shared UI components", () => {
     render(
       createElement(
         TooltipProvider,
-        { delayDuration: 0 },
+        { delayDuration: 0 } as ComponentProps<typeof TooltipProvider>,
         createElement(
           Tooltip,
           null,

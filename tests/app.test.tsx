@@ -43,6 +43,6 @@ describe("app entry points", () => {
 
     expect(metadata.title).toBe("Hacker News Japan");
     expect(metadata.description).toContain("Japan");
-    expect(metadata.icons?.icon).toContain("🇯🇵");
+    expect(metadata.icons).toMatchObject({ icon: expect.stringContaining("🇯🇵") });
   });
 });
