@@ -115,7 +115,7 @@ describe("lib utilities and API helpers", () => {
       hits: sampleHits,
       nbHits: 2,
     });
-    expect(fetch).toHaveBeenCalledWith("https://example.com/search");
+    expect(fetch).toHaveBeenCalledWith("https://example.com/search", undefined);
 
     vi.stubGlobal(
       "fetch",

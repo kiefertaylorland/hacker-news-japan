@@ -124,7 +124,7 @@ describe("fetchFromAlgolia", () => {
     const [, fetchOptions] = fetchMock.mock.calls[0];
 
     expect(result).toEqual(payload);
-    expect(fetchMock).toHaveBeenCalledWith(url);
+    expect(fetchMock).toHaveBeenCalledWith(url, undefined);
     expect(fetchOptions).toBeUndefined();
   });
 
