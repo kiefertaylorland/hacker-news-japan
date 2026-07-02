@@ -112,6 +112,7 @@ describe("buildAlgoliaURL", () => {
 
 describe("fetchFromAlgolia", () => {
   it("returns parsed JSON without browser-forbidden headers", async () => {
+    const url = "https://hn.algolia.com/api/v1/search?query=Japan";
     const payload = { hits: [], nbHits: 0, nbPages: 0, page: 0, hitsPerPage: 30, query: "Japan" };
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -119,30 +120,34 @@ describe("fetchFromAlgolia", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    const result = await fetchFromAlgolia("https://hn.algolia.com/api/v1/search?query=Japan");
+    const result = await fetchFromAlgolia(url);
+    const [, fetchOptions] = fetchMock.mock.calls[0];
 
     expect(result).toEqual(payload);
-    expect(fetchMock).toHaveBeenCalledWith(
-      "https://hn.algolia.com/api/v1/search?query=Japan"
-    );
+    expect(fetchMock).toHaveBeenCalledWith(url);
+    expect(fetchOptions).toBeUndefined();
   });
 
   it("sends the identifying User-Agent outside browsers", async () => {
     vi.stubGlobal("window", undefined);
-    const payload = { hits: [], nbHits: 0, nbPages: 0, page: 0, hitsPerPage: 30, query: "Japan" };
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve(payload),
-    });
-    vi.stubGlobal("fetch", fetchMock);
+    try {
+      const payload = { hits: [], nbHits: 0, nbPages: 0, page: 0, hitsPerPage: 30, query: "Japan" };
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(payload),
+      });
+      vi.stubGlobal("fetch", fetchMock);
 
-    const result = await fetchFromAlgolia("https://hn.algolia.com/api/v1/search?query=Japan");
+      const result = await fetchFromAlgolia("https://hn.algolia.com/api/v1/search?query=Japan");
 
-    expect(result).toEqual(payload);
-    expect(fetchMock).toHaveBeenCalledWith(
-      "https://hn.algolia.com/api/v1/search?query=Japan",
-      { headers: { "User-Agent": "HN-Japan-Dashboard/1.0" } }
-    );
+      expect(result).toEqual(payload);
+      expect(fetchMock).toHaveBeenCalledWith(
+        "https://hn.algolia.com/api/v1/search?query=Japan",
+        { headers: { "User-Agent": "HN-Japan-Dashboard/1.0" } }
+      );
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it("throws with the HTTP status when the response is not ok", async () => {
