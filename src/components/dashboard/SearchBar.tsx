@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { XIcon, SearchIcon } from "lucide-react";
 import {
   InputGroup,
@@ -19,6 +20,8 @@ export function SearchBar({
   onChange,
   placeholder = "Search Japan stories...",
 }: SearchBarProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
   return (
     <InputGroup className="h-12 rounded-xl border-white/10 bg-white/5 shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md transition-colors has-[[data-slot=input-group-control]:focus-visible]:border-hn/50 has-[[data-slot=input-group-control]:focus-visible]:ring-hn/30">
       <InputGroupAddon>
@@ -26,6 +29,10 @@ export function SearchBar({
       </InputGroupAddon>
       <InputGroupInput
         type="text"
+        ref={inputRef}
+        aria-label="Search Japan stories"
+        inputMode="search"
+        enterKeyHint="search"
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -36,8 +43,11 @@ export function SearchBar({
           <InputGroupButton
             size="icon-xs"
             aria-label="Clear search"
-            onClick={() => onChange("")}
-            className="text-slate-400 hover:bg-white/10 hover:text-slate-100"
+            onClick={() => {
+              onChange("");
+              inputRef.current!.focus();
+            }}
+            className="size-11 sm:size-6 text-slate-400 hover:bg-white/10 hover:text-slate-100"
           >
             <XIcon />
           </InputGroupButton>

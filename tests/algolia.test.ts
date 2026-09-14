@@ -148,6 +148,29 @@ describe("fetchFromAlgolia", () => {
     }
   });
 
+  it.each(["browser", "server"] as const)(
+    "forwards the abort signal in %s context without changing headers",
+    async (context) => {
+      if (context === "server") vi.stubGlobal("window", undefined);
+      const controller = new AbortController();
+      const abortError = new DOMException("Aborted", "AbortError");
+      const fetchMock = vi.fn().mockImplementation((_url, options: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          options.signal!.addEventListener("abort", () => reject(abortError));
+        })
+      );
+      vi.stubGlobal("fetch", fetchMock);
+
+      const pending = fetchFromAlgolia("https://example.com", controller.signal);
+      expect(fetchMock).toHaveBeenCalledWith("https://example.com", {
+        signal: controller.signal,
+        ...(context === "server" ? { headers: { "User-Agent": "HN-Japan-Dashboard/1.0" } } : {}),
+      });
+      controller.abort();
+      await expect(pending).rejects.toBe(abortError);
+    }
+  );
+
   it("throws with the HTTP status when the response is not ok", async () => {
     vi.stubGlobal(
       "fetch",

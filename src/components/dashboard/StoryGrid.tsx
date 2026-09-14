@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import type { HNStory } from "@/lib/types";
 import { StoryCard } from "./StoryCard";
 import { StoryCardSkeleton } from "./StoryCardSkeleton";
@@ -18,7 +19,7 @@ interface StoryGridProps {
   isLoading: boolean;
 }
 
-export function StoryGrid({ stories, isLoading }: StoryGridProps) {
+export const StoryGrid = memo(function StoryGrid({ stories, isLoading }: StoryGridProps) {
   // Show skeletons while loading
   if (isLoading) {
     return (
@@ -56,4 +57,4 @@ export function StoryGrid({ stories, isLoading }: StoryGridProps) {
       ))}
     </div>
   );
-}
+});

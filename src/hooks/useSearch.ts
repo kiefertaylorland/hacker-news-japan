@@ -73,6 +73,15 @@ export function useSearch(): UseSearchReturn {
 
   // Fetch results when debounced query or filters change
   useEffect(() => {
+    // Wait for the new query rather than fetching the old query on page reset.
+    if (query !== debouncedQuery) {
+      setIsLoading(true);
+      setError(null);
+      setResults(null);
+      return;
+    }
+
+    const controller = new AbortController();
     const fetchResults = async () => {
       setIsLoading(true);
       setError(null);
@@ -84,19 +93,26 @@ export function useSearch(): UseSearchReturn {
           dateRange,
           sortBy,
           page,
-        });
-        setResults(data);
+        }, controller.signal);
+        if (!controller.signal.aborted) {
+          setResults(data);
+        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Unknown error");
-        setResults(null);
+        if (!controller.signal.aborted) {
+          setError(err instanceof Error ? err.message : "Unknown error");
+          setResults(null);
+        }
       } finally {
-        setIsLoading(false);
+        if (!controller.signal.aborted) {
+          setIsLoading(false);
+        }
       }
     };
 
     // Fetch results with current parameters (empty query is valid—returns top stories)
     fetchResults();
-  }, [debouncedQuery, storyType, dateRange, sortBy, page]);
+    return () => controller.abort();
+  }, [query, debouncedQuery, storyType, dateRange, sortBy, page]);
 
   // Setters that also update URL
   const setQuery = useCallback((newQuery: string) => {

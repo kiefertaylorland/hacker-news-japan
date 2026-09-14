@@ -24,6 +24,7 @@ describe("SortControls", () => {
     for (const option of SORT_BY_OPTIONS) {
       expect(screen.getByRole("radio", { name: option.label })).toBeInTheDocument();
     }
+    expect(screen.getByRole("radiogroup", { name: "Sort stories" })).toBeInTheDocument();
   });
 
   it("marks only the active sort as selected", () => {
@@ -77,6 +78,8 @@ describe("FilterBar", () => {
       expect(screen.getByRole("radio", { name: option.label })).toBeInTheDocument();
     }
     expect(screen.getByRole("combobox")).toHaveTextContent("Past Week");
+    expect(screen.getByRole("combobox", { name: "Date range" })).toBeInTheDocument();
+    expect(screen.getByRole("radiogroup", { name: "Story type" })).toBeInTheDocument();
   });
 
   it("calls onStoryTypeChange with the clicked story type", async () => {
@@ -114,6 +117,25 @@ describe("FilterBar", () => {
 });
 
 describe("Pagination", () => {
+  it.each([6, 19])("keeps the current page visible beyond the first five pages (%s)", async (page) => {
+    const user = userEvent.setup();
+    const onPageChange = vi.fn();
+    render(createElement(Pagination, {
+      results: { ...sampleResults, nbPages: 20 },
+      currentPage: page,
+      onPageChange,
+      isLoading: false,
+    }));
+
+    expect(screen.getByRole("button", { name: String(page + 1) })).toHaveAttribute(
+      "aria-current", "page"
+    );
+    expect(screen.getByText(`Page ${page + 1} of 20`)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: String(page) }));
+    expect(onPageChange).toHaveBeenCalledWith(page - 1);
+    expect(screen.getAllByRole("button", { name: /^\d+$/ })).toHaveLength(5);
+  });
+
   it("caps the number of page buttons at five", () => {
     render(
       createElement(Pagination, {

@@ -1,0 +1,59 @@
+
+> hacker-news-japan@0.1.0 build
+> next build
+
+▲ Next.js 16.3.4 (Turbopack)
+✓ Running next.config.ts took 26ms
+
+  Creating an optimized production build ...
+Turbopack build encountered 2 warnings:
+[next]/internal/font/google/inter_c15e96cb.module.css
+Warning: Error while requesting resource
+There was an issue establishing a connection while requesting https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap
+
+Import trace:
+  Server Component:
+    [next]/internal/font/google/inter_c15e96cb.module.css
+    [next]/internal/font/google/inter_c15e96cb.js
+    ./src/app/layout.tsx
+
+
+[next]/internal/font/google/noto_sans_jp_7bad0665.module.css
+Warning: Error while requesting resource
+There was an issue establishing a connection while requesting https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap
+
+Import trace:
+  Server Component:
+    [next]/internal/font/google/noto_sans_jp_7bad0665.module.css
+    [next]/internal/font/google/noto_sans_jp_7bad0665.js
+    ./src/app/layout.tsx
+
+
+
+> Build error occurred
+Error: Turbopack build failed with 2 errors:
+[next]/internal/font/google/inter_c15e96cb.module.css
+Error: next/font: error:
+Failed to fetch Inter from Google Fonts.
+If you are offline or behind a proxy, self-host the font with next/font/local, or set HTTP_PROXY/HTTPS_PROXY so Next.js can reach fonts.googleapis.com.
+
+Import trace:
+  Server Component:
+    [next]/internal/font/google/inter_c15e96cb.module.css
+    [next]/internal/font/google/inter_c15e96cb.js
+    ./src/app/layout.tsx
+
+
+[next]/internal/font/google/noto_sans_jp_7bad0665.module.css
+Error: next/font: error:
+Failed to fetch Noto Sans JP from Google Fonts.
+If you are offline or behind a proxy, self-host the font with next/font/local, or set HTTP_PROXY/HTTPS_PROXY so Next.js can reach fonts.googleapis.com.
+
+Import trace:
+  Server Component:
+    [next]/internal/font/google/noto_sans_jp_7bad0665.module.css
+    [next]/internal/font/google/noto_sans_jp_7bad0665.js
+    ./src/app/layout.tsx
+
+
+    at ignore-listed frames

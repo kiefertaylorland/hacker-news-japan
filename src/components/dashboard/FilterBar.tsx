@@ -29,6 +29,7 @@ export function FilterBar({
       {/* Story Type Filter */}
       <ToggleGroup
         type="single"
+        aria-label="Story type"
         value={storyType}
         onValueChange={(value) => value && onStoryTypeChange(value as StoryType)}
         className="flex-wrap justify-start gap-2"
@@ -38,7 +39,7 @@ export function FilterBar({
             key={option.value}
             value={option.value}
             size="sm"
-            className="rounded-lg border border-white/10 bg-white/5 px-3 text-xs font-medium text-slate-400 backdrop-blur-md transition-all hover:bg-white/[0.08] hover:text-slate-200 data-[state=on]:border-hn/40 data-[state=on]:bg-hn/15 data-[state=on]:text-hn data-[state=on]:shadow-[0_0_12px_rgba(255,102,0,0.15)]"
+            className="h-11 sm:h-9 rounded-lg border border-white/10 bg-white/5 px-3 text-xs font-medium text-slate-400 backdrop-blur-md transition-all hover:bg-white/[0.08] hover:text-slate-200 data-[state=on]:border-hn/40 data-[state=on]:bg-hn/15 data-[state=on]:text-hn data-[state=on]:shadow-[0_0_12px_rgba(255,102,0,0.15)]"
           >
             {option.label}
           </ToggleGroupItem>
@@ -55,7 +56,8 @@ export function FilterBar({
           onValueChange={(value) => onDateRangeChange(value as DateRange)}
         >
           <SelectTrigger
-            className="h-8 w-[140px] rounded-lg border-white/10 bg-white/5 text-xs font-medium text-slate-200 backdrop-blur-md focus:ring-hn/30"
+            aria-label="Date range"
+            className="h-11 sm:h-8 w-[140px] rounded-lg border-white/10 bg-white/5 text-xs font-medium text-slate-200 backdrop-blur-md focus:ring-hn/30"
           >
             <SelectValue />
           </SelectTrigger>

@@ -29,31 +29,38 @@ export function Pagination({
 
   const canGoPrev = currentPage > 0;
   const canGoNext = currentPage < results.nbPages - 1;
+  const pageCount = Math.min(5, results.nbPages);
+  const firstPage = Math.max(0, Math.min(currentPage - 2, results.nbPages - pageCount));
 
   return (
     <PaginationRoot className="mt-8">
-      <PaginationContent className="gap-2">
+      <PaginationContent className="w-full justify-between gap-2 sm:w-auto sm:justify-center">
         <PaginationItem>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => onPageChange(currentPage - 1)}
             disabled={!canGoPrev || isLoading}
-            className="gap-1 border border-white/10 bg-white/5 text-slate-300 backdrop-blur-md hover:bg-white/10 hover:text-slate-100"
+            className="h-11 sm:h-9 gap-1 border border-white/10 bg-white/5 text-slate-300 backdrop-blur-md hover:bg-white/10 hover:text-slate-100"
           >
             <ChevronLeftIcon className="h-4 w-4" />
             Previous
           </Button>
         </PaginationItem>
 
-        {Array.from({ length: Math.min(5, results.nbPages) }).map((_, i) => {
-          const isActive = i === currentPage;
+        <PaginationItem className="text-center text-xs tabular-nums text-slate-400 sm:hidden">
+          Page {currentPage + 1} of {results.nbPages}
+        </PaginationItem>
+
+        {Array.from({ length: pageCount }).map((_, i) => {
+          const pageNumber = firstPage + i;
+          const isActive = pageNumber === currentPage;
           return (
-            <PaginationItem key={i}>
+            <PaginationItem key={pageNumber} className="hidden sm:block">
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => onPageChange(i)}
+                onClick={() => onPageChange(pageNumber)}
                 disabled={isLoading}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
@@ -63,7 +70,7 @@ export function Pagination({
                     : "border-white/10 bg-white/5 text-slate-400 hover:bg-white/10 hover:text-slate-200"
                 )}
               >
-                {i + 1}
+                {pageNumber + 1}
               </Button>
             </PaginationItem>
           );
@@ -75,7 +82,7 @@ export function Pagination({
             size="sm"
             onClick={() => onPageChange(currentPage + 1)}
             disabled={!canGoNext || isLoading}
-            className="gap-1 border border-white/10 bg-white/5 text-slate-300 backdrop-blur-md hover:bg-white/10 hover:text-slate-100"
+            className="h-11 sm:h-9 gap-1 border border-white/10 bg-white/5 text-slate-300 backdrop-blur-md hover:bg-white/10 hover:text-slate-100"
           >
             Next
             <ChevronRightIcon className="h-4 w-4" />
