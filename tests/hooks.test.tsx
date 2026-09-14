@@ -179,7 +179,7 @@ describe("hooks", () => {
     expect(result.current.page).toBe(0);
     expect(pushMock).toHaveBeenLastCalledWith(
       "/?query=osaka&storyType=story&dateRange=all&sortBy=date_desc&page=0",
-      { scroll: false }
+      { scroll: true }
     );
 
     act(() => {
@@ -187,7 +187,7 @@ describe("hooks", () => {
     });
     expect(pushMock).toHaveBeenLastCalledWith(
       "/?query=osaka&storyType=job&dateRange=all&sortBy=date_desc&page=0",
-      { scroll: false }
+      { scroll: true }
     );
 
     act(() => {
@@ -195,7 +195,7 @@ describe("hooks", () => {
     });
     expect(pushMock).toHaveBeenLastCalledWith(
       "/?query=osaka&storyType=job&dateRange=month&sortBy=date_desc&page=0",
-      { scroll: false }
+      { scroll: true }
     );
 
     act(() => {
@@ -203,7 +203,7 @@ describe("hooks", () => {
     });
     expect(pushMock).toHaveBeenLastCalledWith(
       "/?query=osaka&storyType=job&dateRange=month&sortBy=comments&page=0",
-      { scroll: false }
+      { scroll: true }
     );
 
     act(() => {
@@ -211,7 +211,7 @@ describe("hooks", () => {
     });
     expect(pushMock).toHaveBeenLastCalledWith(
       "/?query=osaka&storyType=job&dateRange=month&sortBy=comments&page=2",
-      { scroll: false }
+      { scroll: true }
     );
   });
 
@@ -339,7 +339,7 @@ describe("hooks", () => {
     expect(mockedSearchStories).toHaveBeenCalledTimes(1);
     expect(pushMock).toHaveBeenLastCalledWith(
       "/?query=osaka&storyType=job&dateRange=all&sortBy=date_desc&page=0",
-      { scroll: false }
+      { scroll: true }
     );
 
     await act(async () => vi.advanceTimersByTime(1));
