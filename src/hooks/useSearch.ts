@@ -66,7 +66,7 @@ export function useSearch(): UseSearchReturn {
 
       // Build URL and remove trailing &
       const url = `/?${params.toString()}`;
-      router.push(url, { scroll: false });
+      router.push(url, { scroll: true });
     },
     [router]
   );
