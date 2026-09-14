@@ -74,7 +74,12 @@ export function useSearch(): UseSearchReturn {
   // Fetch results when debounced query or filters change
   useEffect(() => {
     // Wait for the new query rather than fetching the old query on page reset.
-    if (query !== debouncedQuery) return;
+    if (query !== debouncedQuery) {
+      setIsLoading(true);
+      setError(null);
+      setResults(null);
+      return;
+    }
 
     const controller = new AbortController();
     const fetchResults = async () => {

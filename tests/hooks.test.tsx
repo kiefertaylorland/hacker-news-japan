@@ -372,4 +372,26 @@ describe("hooks", () => {
     await act(async () => vi.advanceTimersByTime(300));
     expect(mockedSearchStories).toHaveBeenCalledTimes(1);
   });
+
+  it("clears results and shows loading while a new query is debouncing", async () => {
+    vi.useRealTimers();
+    mockedSearchStories.mockResolvedValue(response);
+    const { result } = renderHook(() => useSearch());
+
+    await waitFor(() => expect(result.current.results).toEqual(response));
+
+    vi.useFakeTimers();
+    act(() => result.current.setQuery("osaka"));
+
+    expect(result.current.results).toBeNull();
+    expect(result.current.error).toBeNull();
+    expect(result.current.isLoading).toBe(true);
+    expect(mockedSearchStories).toHaveBeenCalledTimes(1);
+
+    await act(async () => vi.advanceTimersByTime(300));
+    expect(mockedSearchStories).toHaveBeenLastCalledWith(
+      { query: "osaka", storyType: "all", dateRange: "all", sortBy: "date_desc", page: 0 },
+      expect.any(AbortSignal)
+    );
+  });
 });
