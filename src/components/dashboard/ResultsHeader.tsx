@@ -22,9 +22,9 @@ export function ResultsHeader({ query, results, isLoading }: ResultsHeaderProps)
 
   return (
     <div className="flex animate-fade-in items-center justify-between gap-4">
-      <div className="flex items-center gap-3">
+      <div className="flex min-w-0 items-center gap-3">
         <div className="h-5 w-1 shrink-0 rounded-full bg-hn/70" />
-        <p className="text-sm text-slate-400">
+        <p className="min-w-0 break-words text-sm text-slate-400">
           <span className="font-bold tabular-nums text-slate-100">
             {count.toLocaleString()}
           </span>

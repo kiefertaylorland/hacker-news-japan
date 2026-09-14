@@ -13,6 +13,7 @@ import { StoryCard } from "@/components/dashboard/StoryCard";
 import { StoryCardSkeleton } from "@/components/dashboard/StoryCardSkeleton";
 import { StoryGrid } from "@/components/dashboard/StoryGrid";
 import type { AlgoliaResponse, HNStory } from "@/lib/types";
+import * as utils from "@/lib/utils";
 
 const useSearchMock = vi.fn();
 
@@ -70,6 +71,9 @@ describe("dashboard components", () => {
     expect(screen.getByText("Request failed")).toBeInTheDocument();
     expect(screen.getByDisplayValue("tokyo")).toBeInTheDocument();
     expect(screen.getByText("Building in Japan")).toBeInTheDocument();
+    expect(screen.getByRole("main")).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("Request failed");
+    expect(screen.getByRole("status")).toHaveTextContent("matching");
   });
 
   it("renders the dashboard without errors or results", () => {
@@ -109,6 +113,8 @@ describe("dashboard components", () => {
     expect(screen.getByPlaceholderText("Search here")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Clear search" }));
     expect(onChange).toHaveBeenLastCalledWith("");
+    expect(screen.getByRole("textbox", { name: "Search Japan stories" })).toHaveFocus();
+    expect(screen.getByRole("textbox")).toHaveAttribute("inputmode", "search");
   });
 
   it("renders filter controls and fires callbacks", async () => {
@@ -314,6 +320,44 @@ describe("dashboard components", () => {
 
     render(createElement(StoryGrid, { stories: [sampleStory], isLoading: false }));
     expect(screen.getByText("Building in Japan")).toBeInTheDocument();
+  });
+
+  it("does not rerender unchanged stories while typing, but renders new results", () => {
+    const getDomain = vi.spyOn(utils, "getDomain");
+    const stories = [sampleStory];
+    const { rerender } = render(createElement(StoryGrid, { stories, isLoading: false }));
+    getDomain.mockClear();
+
+    rerender(createElement(StoryGrid, { stories, isLoading: false }));
+    expect(getDomain).not.toHaveBeenCalled();
+
+    rerender(createElement(StoryGrid, {
+      stories: [{ ...sampleStory, title: "Updated story" }],
+      isLoading: false,
+    }));
+    expect(getDomain).toHaveBeenCalledTimes(1);
+    expect(screen.getByText("Updated story")).toBeInTheDocument();
+    getDomain.mockRestore();
+  });
+
+  it("announces loading without presenting stale results as current", () => {
+    useSearchMock.mockReturnValue({
+      query: "", storyType: "all", dateRange: "all", sortBy: "date_desc",
+      page: 0, results: sampleResults, isLoading: true, error: null,
+      setQuery: vi.fn(), setStoryType: vi.fn(), setDateRange: vi.fn(),
+      setSortBy: vi.fn(), setPage: vi.fn(),
+    });
+    render(createElement(Dashboard));
+    expect(screen.getByRole("status")).toHaveTextContent("Loading stories");
+    expect(screen.queryByText("Building in Japan")).not.toBeInTheDocument();
+  });
+
+  it("keeps badge and accent precedence consistent for overlapping tags", () => {
+    const { container } = render(createElement(StoryCard, {
+      story: { ...sampleStory, _tags: ["job", "show_hn", "ask_hn"] },
+    }));
+    expect(screen.getByText("Ask HN")).toHaveClass("border-blue-500/30");
+    expect(container.querySelector(".border-l-2")).toHaveClass("border-l-blue-500/60");
   });
 
   it("renders the dashboard skeleton and story card skeleton", () => {

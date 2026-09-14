@@ -67,7 +67,8 @@ export function buildAlgoliaURL(
 }
 
 export async function fetchFromAlgolia(
-  url: string
+  url: string,
+  signal?: AbortSignal
 ): Promise<AlgoliaResponse> {
   let requestOptions: RequestInit | undefined;
   if (typeof window === "undefined") {
@@ -76,6 +77,10 @@ export async function fetchFromAlgolia(
         "User-Agent": "HN-Japan-Dashboard/1.0",
       },
     };
+  }
+
+  if (signal) {
+    requestOptions = { ...requestOptions, signal };
   }
 
   const response = await fetch(url, requestOptions);

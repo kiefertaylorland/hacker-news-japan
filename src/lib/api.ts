@@ -3,17 +3,12 @@ import {
   fetchFromAlgolia,
   sortHitsByStrategy,
 } from "./algolia";
-import type { AlgoliaResponse, DateRange, SortBy, StoryType } from "./types";
+import type { AlgoliaResponse, SearchParams } from "./types";
 
-interface SearchOptions {
-  query: string;
-  storyType: StoryType;
-  dateRange: DateRange;
-  sortBy: SortBy;
-  page: number;
-}
-
-export async function searchStories(options: SearchOptions): Promise<AlgoliaResponse> {
+export async function searchStories(
+  options: SearchParams,
+  signal?: AbortSignal
+): Promise<AlgoliaResponse> {
   const url = buildAlgoliaURL(
     options.query,
     options.storyType,
@@ -22,7 +17,7 @@ export async function searchStories(options: SearchOptions): Promise<AlgoliaResp
     options.page
   );
 
-  const data = await fetchFromAlgolia(url);
+  const data = await fetchFromAlgolia(url, signal);
 
   // Apply client-side sorting for sorts that need it
   // - points and comments: search endpoint returns by relevance, must be re-sorted

@@ -12,25 +12,34 @@ interface StoryCardProps {
   index?: number;
 }
 
-function getStoryBadgeClass(tags: string[]): string {
-  if (tags.includes("ask_hn")) return "border-blue-500/30 bg-blue-500/15 text-blue-300";
-  if (tags.includes("show_hn")) return "border-emerald-500/30 bg-emerald-500/15 text-emerald-300";
-  if (tags.includes("job")) return "border-slate-500/30 bg-slate-500/15 text-slate-300";
-  return "border-amber-500/30 bg-amber-500/15 text-amber-300";
-}
+const STORY_PRESENTATION = {
+  ask_hn: {
+    label: "Ask HN",
+    badge: "border-blue-500/30 bg-blue-500/15 text-blue-300",
+    accent: "border-l-blue-500/60",
+  },
+  show_hn: {
+    label: "Show HN",
+    badge: "border-emerald-500/30 bg-emerald-500/15 text-emerald-300",
+    accent: "border-l-emerald-500/60",
+  },
+  job: {
+    label: "Job",
+    badge: "border-slate-500/30 bg-slate-500/15 text-slate-300",
+    accent: "border-l-slate-500/40",
+  },
+  story: {
+    label: "Story",
+    badge: "border-amber-500/30 bg-amber-500/15 text-amber-300",
+    accent: "border-l-hn/50",
+  },
+};
 
-function getStoryTypeLabel(tags: string[]): string {
-  if (tags.includes("ask_hn")) return "Ask HN";
-  if (tags.includes("show_hn")) return "Show HN";
-  if (tags.includes("job")) return "Job";
-  return "Story";
-}
-
-function getStoryAccentClass(tags: string[]): string {
-  if (tags.includes("ask_hn")) return "border-l-blue-500/60";
-  if (tags.includes("show_hn")) return "border-l-emerald-500/60";
-  if (tags.includes("job")) return "border-l-slate-500/40";
-  return "border-l-hn/50";
+function getStoryPresentation(tags: string[]) {
+  if (tags.includes("ask_hn")) return STORY_PRESENTATION.ask_hn;
+  if (tags.includes("show_hn")) return STORY_PRESENTATION.show_hn;
+  if (tags.includes("job")) return STORY_PRESENTATION.job;
+  return STORY_PRESENTATION.story;
 }
 
 function getStoryUrl(url: string | null, fallbackUrl: string): string {
@@ -47,8 +56,7 @@ export function StoryCard({ story, index = 0 }: StoryCardProps) {
   const domain = getDomain(story.url);
   const hnUrl = `https://news.ycombinator.com/item?id=${story.objectID}`;
   const storyUrl = getStoryUrl(story.url, hnUrl);
-  const badgeClass = getStoryBadgeClass(story._tags);
-  const typeLabel = getStoryTypeLabel(story._tags);
+  const presentation = getStoryPresentation(story._tags);
 
   return (
     <a
@@ -56,12 +64,12 @@ export function StoryCard({ story, index = 0 }: StoryCardProps) {
       target="_blank"
       rel="noopener noreferrer"
       style={{ animationDelay: `${Math.min(index * 40, 320)}ms` }}
-      className="group block h-full animate-slide-up"
+      className="group block h-full min-w-0 animate-slide-up rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hn focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
       <Card
         className={cn(
           "h-full overflow-hidden border-l-2 border-white/10 bg-white/5 shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.07] hover:shadow-[0_12px_48px_rgba(0,0,0,0.55)]",
-          getStoryAccentClass(story._tags)
+          presentation.accent
         )}
       >
         {/* Header with badge and title */}
@@ -69,16 +77,16 @@ export function StoryCard({ story, index = 0 }: StoryCardProps) {
           <div className="mb-2 flex items-start justify-between gap-2">
             <Badge
               variant="outline"
-              className={cn("rounded-full px-2 py-0.5", badgeClass)}
+              className={cn("shrink-0 rounded-full px-2 py-0.5", presentation.badge)}
             >
-              {typeLabel}
+              {presentation.label}
             </Badge>
             {story.url && (
               <span className="truncate font-mono text-xs text-slate-500">{domain}</span>
             )}
           </div>
 
-          <CardTitle className="line-clamp-3 text-sm font-semibold leading-snug text-slate-100 transition-colors group-hover:text-hn">
+          <CardTitle className="line-clamp-3 break-words text-sm font-semibold leading-snug text-slate-100 transition-colors group-hover:text-hn">
             {story.title}
           </CardTitle>
         </CardHeader>
@@ -86,21 +94,21 @@ export function StoryCard({ story, index = 0 }: StoryCardProps) {
         <Separator className="bg-white/[0.06]" />
 
         {/* Collapsed Footer */}
-        <CardFooter className="flex items-center gap-3 px-4 py-3 text-xs text-slate-400">
-          <div className="flex items-center gap-1.5">
+        <CardFooter className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 text-xs text-slate-400">
+          <div className="flex shrink-0 items-center gap-1.5">
             <TrendingUpIcon className="h-3.5 w-3.5 text-hn" />
             <span className="font-medium tabular-nums">{story.points ?? 0}</span>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex shrink-0 items-center gap-1.5">
             <MessageCircleIcon className="h-3.5 w-3.5 text-slate-500" />
             <span className="font-medium tabular-nums">{story.num_comments ?? 0}</span>
           </div>
 
           <div className="flex-1" />
 
-          <span className="truncate text-xs text-slate-500">{story.author}</span>
-          <span className="text-xs text-slate-600">{formatRelativeTime(story.created_at)}</span>
+          <span className="min-w-0 max-w-full truncate text-xs text-slate-500">{story.author}</span>
+          <span className="shrink-0 text-xs text-slate-600">{formatRelativeTime(story.created_at)}</span>
           <ExternalLinkIcon className="h-3 w-3 flex-shrink-0 text-slate-500 transition-colors group-hover:text-hn" />
         </CardFooter>
       </Card>

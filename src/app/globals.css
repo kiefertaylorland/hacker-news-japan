@@ -39,6 +39,16 @@
     --radius: 0.625rem;
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation: none !important;
+      transition: none !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
   * {
     @apply border-border;
   }

@@ -26,7 +26,7 @@ export function Dashboard() {
   } = useSearch();
 
   return (
-    <div className="min-h-screen w-full py-8 px-4 sm:px-6 lg:px-8">
+    <main className="min-h-screen w-full py-6 px-4 sm:py-8 sm:px-6 lg:px-8">
       {/* Container */}
       <div className="mx-auto max-w-7xl space-y-6">
         {/* Header */}
@@ -60,13 +60,16 @@ export function Dashboard() {
 
         {/* Error State */}
         {error && (
-          <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-red-300 backdrop-blur-md">
+          <div role="alert" className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-red-300 backdrop-blur-md">
             {error}
           </div>
         )}
 
         {/* Results Header */}
-        <ResultsHeader query={query} results={results} isLoading={isLoading} />
+        <div role="status" aria-live="polite" aria-atomic="true">
+          {isLoading && <span className="sr-only">Loading stories</span>}
+          <ResultsHeader query={query} results={results} isLoading={isLoading} />
+        </div>
 
         {/* Stories Grid */}
         <StoryGrid stories={results?.hits || null} isLoading={isLoading} />
@@ -79,6 +82,6 @@ export function Dashboard() {
           isLoading={isLoading}
         />
       </div>
-    </div>
+    </main>
   );
 }

@@ -201,11 +201,23 @@ describe("lib utilities and API helpers", () => {
       });
 
       expect(buildSpy).toHaveBeenCalledWith("Japan", "all", "all", sortBy, 0);
-      expect(fetchSpy).toHaveBeenCalledWith("https://algolia.test");
+      expect(fetchSpy).toHaveBeenCalledWith("https://algolia.test", undefined);
       expect(sortSpy).toHaveBeenCalledWith(sampleHits, sortBy);
       expect(result.hits.map((hit) => hit.objectID)).toEqual(["2", "1"]);
     }
   );
+
+  it("forwards cancellation to Algolia and propagates abort failures", async () => {
+    const controller = new AbortController();
+    const abortError = new DOMException("Aborted", "AbortError");
+    const fetchSpy = vi.spyOn(algolia, "fetchFromAlgolia").mockRejectedValue(abortError);
+
+    await expect(searchStories(DEFAULT_SEARCH_PARAMS, controller.signal)).rejects.toBe(abortError);
+    expect(fetchSpy).toHaveBeenCalledWith(
+      buildAlgoliaURL("", "all", "all", "date_desc", 0),
+      controller.signal
+    );
+  });
 
   it.each(["relevance", "date_desc"] satisfies SortBy[])(
     "does not apply client-side sorting for %s searches",

@@ -17,6 +17,7 @@ export function SortControls({ sortBy, onChange }: SortControlsProps) {
       </span>
       <ToggleGroup
         type="single"
+        aria-label="Sort stories"
         value={sortBy}
         onValueChange={(value) => value && onChange(value as SortBy)}
         className="flex-wrap justify-start gap-1.5"
@@ -26,7 +27,7 @@ export function SortControls({ sortBy, onChange }: SortControlsProps) {
             key={option.value}
             value={option.value}
             size="sm"
-            className="h-7 rounded-md border border-white/10 bg-white/5 px-2.5 text-xs font-medium text-slate-400 backdrop-blur-md transition-all hover:bg-white/[0.08] hover:text-slate-200 data-[state=on]:border-hn/40 data-[state=on]:bg-hn/15 data-[state=on]:text-hn data-[state=on]:shadow-[0_0_10px_rgba(255,102,0,0.12)]"
+            className="h-11 sm:h-7 rounded-md border border-white/10 bg-white/5 px-2.5 text-xs font-medium text-slate-400 backdrop-blur-md transition-all hover:bg-white/[0.08] hover:text-slate-200 data-[state=on]:border-hn/40 data-[state=on]:bg-hn/15 data-[state=on]:text-hn data-[state=on]:shadow-[0_0_10px_rgba(255,102,0,0.12)]"
           >
             {option.label}
           </ToggleGroupItem>
