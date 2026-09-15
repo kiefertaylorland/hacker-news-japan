@@ -86,10 +86,10 @@ const config: Config = {
         md: "12px",
       },
       fontFamily: {
-        // Inter for Latin; Noto Sans JP picks up CJK glyphs Inter lacks.
+        // Prefer system-installed sans fonts to keep initial load lightweight.
         sans: [
-          "var(--font-inter)",
-          "var(--font-noto-jp)",
+          "Inter",
+          "Noto Sans JP",
           ...defaultTheme.fontFamily.sans,
         ],
       },

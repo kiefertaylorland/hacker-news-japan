@@ -1,22 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Noto_Sans_JP } from "next/font/google";
 import "./globals.css";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
-// CJK font for Japanese glyphs. No "japanese" subset exists, so preload is
-// disabled (the full face is large) and weights are pinned.
-const notoSansJp = Noto_Sans_JP({
-  weight: ["400", "500", "700"],
-  subsets: ["latin"],
-  variable: "--font-noto-jp",
-  display: "swap",
-  preload: false,
-});
 
 export const metadata: Metadata = {
   title: "Hacker News Japan",
@@ -33,7 +16,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark scroll-smooth">
-      <body className={`${inter.variable} ${notoSansJp.variable} font-sans antialiased`}>
+      <body className="font-sans antialiased">
         <div className="min-h-screen w-full">
           {children}
         </div>

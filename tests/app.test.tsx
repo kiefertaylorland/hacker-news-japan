@@ -3,11 +3,6 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("next/font/google", () => ({
-  Inter: () => ({ variable: "--font-inter" }),
-  Noto_Sans_JP: () => ({ variable: "--font-noto-jp" }),
-}));
-
 vi.mock("@/components/dashboard/Dashboard", () => ({
   Dashboard: () => createElement("div", null, "Dashboard content"),
 }));
@@ -38,7 +33,7 @@ describe("app entry points", () => {
 
     expect(markup).toContain('lang="en"');
     expect(markup).toContain("dark scroll-smooth");
-    expect(markup).toContain("--font-inter --font-noto-jp font-sans antialiased");
+    expect(markup).toContain("font-sans antialiased");
     expect(markup).toContain("Child content");
 
     expect(metadata.title).toBe("Hacker News Japan");
