@@ -17,9 +17,20 @@ import { SearchXIcon } from "lucide-react";
 interface StoryGridProps {
   stories: HNStory[] | null;
   isLoading: boolean;
+  savedIds?: string[];
+  onToggleSave?: (story: HNStory) => void;
+  emptyTitle?: string;
+  emptyDescription?: string;
 }
 
-export const StoryGrid = memo(function StoryGrid({ stories, isLoading }: StoryGridProps) {
+export const StoryGrid = memo(function StoryGrid({
+  stories,
+  isLoading,
+  savedIds,
+  onToggleSave,
+  emptyTitle = "No stories found",
+  emptyDescription = "Try adjusting your filters or search.",
+}: StoryGridProps) {
   // Show skeletons while loading
   if (isLoading) {
     return (
@@ -39,10 +50,8 @@ export const StoryGrid = memo(function StoryGrid({ stories, isLoading }: StoryGr
           <EmptyMedia variant="icon" className="bg-white/5 text-slate-400">
             <SearchXIcon />
           </EmptyMedia>
-          <EmptyTitle className="text-slate-200">No stories found</EmptyTitle>
-          <EmptyDescription className="text-slate-500">
-            Try adjusting your filters or search.
-          </EmptyDescription>
+          <EmptyTitle className="text-slate-200">{emptyTitle}</EmptyTitle>
+          <EmptyDescription className="text-slate-500">{emptyDescription}</EmptyDescription>
         </EmptyHeader>
         <EmptyContent />
       </Empty>
@@ -53,7 +62,13 @@ export const StoryGrid = memo(function StoryGrid({ stories, isLoading }: StoryGr
   return (
     <div className="grid animate-slide-up grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
       {stories.map((story, index) => (
-        <StoryCard key={story.objectID} story={story} index={index} />
+        <StoryCard
+          key={story.objectID}
+          story={story}
+          index={index}
+          isSaved={savedIds?.includes(story.objectID) ?? false}
+          onToggleSave={onToggleSave}
+        />
       ))}
     </div>
   );

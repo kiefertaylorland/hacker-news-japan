@@ -2,14 +2,23 @@
 
 import { cn, formatRelativeTime, getDomain } from "@/lib/utils";
 import type { HNStory } from "@/lib/types";
-import { ExternalLinkIcon, TrendingUpIcon, MessageCircleIcon } from "lucide-react";
+import {
+  BookmarkCheckIcon,
+  BookmarkIcon,
+  ExternalLinkIcon,
+  TrendingUpIcon,
+  MessageCircleIcon,
+} from "lucide-react";
 import { Card, CardHeader, CardFooter, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
 interface StoryCardProps {
   story: HNStory;
   index?: number;
+  isSaved?: boolean;
+  onToggleSave?: (story: HNStory) => void;
 }
 
 const STORY_PRESENTATION = {
@@ -52,19 +61,16 @@ function getStoryUrl(url: string | null, fallbackUrl: string): string {
   }
 }
 
-export function StoryCard({ story, index = 0 }: StoryCardProps) {
+export function StoryCard({ story, index = 0, isSaved = false, onToggleSave }: StoryCardProps) {
   const domain = getDomain(story.url);
   const hnUrl = `https://news.ycombinator.com/item?id=${story.objectID}`;
   const storyUrl = getStoryUrl(story.url, hnUrl);
   const presentation = getStoryPresentation(story._tags);
 
   return (
-    <a
-      href={storyUrl}
-      target="_blank"
-      rel="noopener noreferrer"
+    <div
       style={{ animationDelay: `${Math.min(index * 40, 320)}ms` }}
-      className="group block h-full min-w-0 animate-slide-up rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hn focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      className="group block h-full min-w-0 animate-slide-up rounded-xl"
     >
       <Card
         className={cn(
@@ -81,13 +87,38 @@ export function StoryCard({ story, index = 0 }: StoryCardProps) {
             >
               {presentation.label}
             </Badge>
-            {story.url && (
-              <span className="truncate font-mono text-xs text-slate-500">{domain}</span>
-            )}
+            <div className="flex min-w-0 items-center gap-2">
+              {story.url && (
+                <span className="truncate font-mono text-xs text-slate-500">{domain}</span>
+              )}
+              {onToggleSave && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label={isSaved ? "Remove bookmark" : "Save story"}
+                  aria-pressed={isSaved}
+                  onClick={() => onToggleSave(story)}
+                  className={cn(
+                    "-mr-2 -mt-1.5 h-7 w-7 shrink-0 hover:bg-white/10",
+                    isSaved ? "text-hn hover:text-hn" : "text-slate-500 hover:text-slate-200"
+                  )}
+                >
+                  {isSaved ? <BookmarkCheckIcon /> : <BookmarkIcon />}
+                </Button>
+              )}
+            </div>
           </div>
 
           <CardTitle className="line-clamp-3 break-words text-sm font-semibold leading-snug text-slate-100 transition-colors group-hover:text-hn">
-            {story.title}
+            <a
+              href={storyUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hn focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
+              {story.title}
+            </a>
           </CardTitle>
         </CardHeader>
 
@@ -112,6 +143,6 @@ export function StoryCard({ story, index = 0 }: StoryCardProps) {
           <ExternalLinkIcon className="h-3 w-3 flex-shrink-0 text-slate-500 transition-colors group-hover:text-hn" />
         </CardFooter>
       </Card>
-    </a>
+    </div>
   );
 }
