@@ -163,8 +163,7 @@ describe("auth callback route", () => {
   });
 
   it("ignores the forwarded host in development", async () => {
-    const previousEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = "development";
+    vi.stubEnv("NODE_ENV", "development");
     auth.exchangeCodeForSession.mockResolvedValue({ error: null });
     const response = await callback(
       new Request("http://localhost:3000/auth/callback?code=abc", {
@@ -172,7 +171,7 @@ describe("auth callback route", () => {
       })
     );
     expect(response.headers.get("location")).toBe("http://localhost:3000/");
-    process.env.NODE_ENV = previousEnv;
+    vi.stubEnv("NODE_ENV", "test");
   });
 
   it("redirects home with an error when the code is missing or invalid", async () => {

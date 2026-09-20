@@ -21,10 +21,10 @@ vi.mock("@/hooks/useSearch", () => ({
   useSearch: () => useSearchMock(),
 }));
 
-const toggleBookmarkMock = vi.fn(async () => {});
+const toggleBookmarkMock = vi.fn(async (_story: HNStory, _isSaved: boolean) => {});
 
 vi.mock("@/app/saved/actions", () => ({
-  toggleBookmark: (...args: unknown[]) => toggleBookmarkMock(...args),
+  toggleBookmark: (story: HNStory, isSaved: boolean) => toggleBookmarkMock(story, isSaved),
 }));
 
 vi.mock("@/app/auth/actions", () => ({
