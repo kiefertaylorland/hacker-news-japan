@@ -1,6 +1,11 @@
 "use client";
 
+import { useOptimistic, useTransition } from "react";
 import { useSearch } from "@/hooks/useSearch";
+import { toggleBookmark } from "@/app/saved/actions";
+import { UserMenu } from "@/components/auth/UserMenu";
+import type { AuthUser } from "@/lib/auth/user";
+import type { HNStory } from "@/lib/types";
 import { SearchBar } from "./SearchBar";
 import { FilterBar } from "./FilterBar";
 import { SortControls } from "./SortControls";
@@ -8,7 +13,14 @@ import { ResultsHeader } from "./ResultsHeader";
 import { StoryGrid } from "./StoryGrid";
 import { Pagination } from "./Pagination";
 
-export function Dashboard() {
+interface DashboardProps {
+  user?: AuthUser | null;
+  savedIds?: string[];
+}
+
+const EMPTY_IDS: string[] = [];
+
+export function Dashboard({ user = null, savedIds = EMPTY_IDS }: DashboardProps) {
   const {
     query,
     storyType,
@@ -25,23 +37,41 @@ export function Dashboard() {
     setPage,
   } = useSearch();
 
+  const [, startTransition] = useTransition();
+  const [optimisticSavedIds, toggleSavedId] = useOptimistic(
+    savedIds,
+    (current: string[], objectID: string) =>
+      current.includes(objectID) ? current.filter((id) => id !== objectID) : [...current, objectID]
+  );
+
+  const handleToggleSave = (story: HNStory) => {
+    const isSaved = optimisticSavedIds.includes(story.objectID);
+    startTransition(async () => {
+      toggleSavedId(story.objectID);
+      await toggleBookmark(story, isSaved);
+    });
+  };
+
   return (
     <main className="min-h-screen w-full py-6 px-4 sm:py-8 sm:px-6 lg:px-8">
       {/* Container */}
       <div className="mx-auto max-w-7xl space-y-6">
         {/* Header */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <div className="h-px w-8 bg-hn/60" />
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-hn/80">Hacker News</span>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="h-px w-8 bg-hn/60" />
+              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-hn/80">Hacker News</span>
+            </div>
+            <div className="flex items-baseline gap-4">
+              <h1 className="text-5xl font-bold tracking-tight text-slate-100">日本</h1>
+              <span className="text-2xl font-light text-slate-400 tracking-wide">Japan</span>
+            </div>
+            <p className="text-slate-500 text-sm max-w-md">
+              Browse, search, and filter Hacker News stories about Japan — updated in real time.
+            </p>
           </div>
-          <div className="flex items-baseline gap-4">
-            <h1 className="text-5xl font-bold tracking-tight text-slate-100">日本</h1>
-            <span className="text-2xl font-light text-slate-400 tracking-wide">Japan</span>
-          </div>
-          <p className="text-slate-500 text-sm max-w-md">
-            Browse, search, and filter Hacker News stories about Japan — updated in real time.
-          </p>
+          <UserMenu user={user} />
         </div>
 
         {/* Search */}
@@ -72,7 +102,12 @@ export function Dashboard() {
         </div>
 
         {/* Stories Grid */}
-        <StoryGrid stories={results?.hits || null} isLoading={isLoading} />
+        <StoryGrid
+          stories={results?.hits || null}
+          isLoading={isLoading}
+          savedIds={optimisticSavedIds}
+          onToggleSave={user ? handleToggleSave : undefined}
+        />
 
         {/* Pagination */}
         <Pagination
