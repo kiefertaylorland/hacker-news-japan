@@ -61,3 +61,6 @@ if (!window.HTMLElement.prototype.setPointerCapture) {
 if (!window.HTMLElement.prototype.releasePointerCapture) {
   window.HTMLElement.prototype.releasePointerCapture = () => {};
 }
+
+vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test");

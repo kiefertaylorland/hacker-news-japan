@@ -11,14 +11,31 @@ vi.mock("@/components/dashboard/DashboardSkeleton", () => ({
   DashboardSkeleton: () => createElement("div", null, "Dashboard skeleton"),
 }));
 
+vi.mock("@/lib/auth/user", () => ({
+  getCurrentUser: vi.fn(async () => ({ id: "user-1", name: "octocat", avatarUrl: null })),
+}));
+
+vi.mock("@/lib/bookmarks", () => ({
+  getBookmarkIds: vi.fn(async () => ["1"]),
+}));
+
 import Loading from "@/app/loading";
 import RootLayout, { metadata } from "@/app/layout";
 import Home from "@/app/page";
+import { getCurrentUser } from "@/lib/auth/user";
+import { getBookmarkIds } from "@/lib/bookmarks";
 
 describe("app entry points", () => {
-  it("renders the home page", () => {
-    render(createElement(Home));
+  it("renders the home page with the current user's bookmarks", async () => {
+    render(await Home());
     expect(screen.getByText("Dashboard content")).toBeInTheDocument();
+    expect(getBookmarkIds).toHaveBeenCalledWith("user-1");
+  });
+
+  it("renders the home page for anonymous visitors", async () => {
+    vi.mocked(getCurrentUser).mockResolvedValueOnce(null);
+    render(await Home());
+    expect(getBookmarkIds).toHaveBeenCalledWith(null);
   });
 
   it("renders the loading page", () => {

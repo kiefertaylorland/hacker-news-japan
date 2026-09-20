@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -19,6 +19,17 @@ const useSearchMock = vi.fn();
 
 vi.mock("@/hooks/useSearch", () => ({
   useSearch: () => useSearchMock(),
+}));
+
+const toggleBookmarkMock = vi.fn(async () => {});
+
+vi.mock("@/app/saved/actions", () => ({
+  toggleBookmark: (...args: unknown[]) => toggleBookmarkMock(...args),
+}));
+
+vi.mock("@/app/auth/actions", () => ({
+  signInWithGitHub: vi.fn(),
+  signOut: vi.fn(),
 }));
 
 const sampleStory: HNStory = {
@@ -46,6 +57,7 @@ const sampleResults: AlgoliaResponse = {
 describe("dashboard components", () => {
   beforeEach(() => {
     useSearchMock.mockReset();
+    toggleBookmarkMock.mockClear();
   });
 
   it("renders the dashboard with results and an error", () => {
@@ -290,7 +302,7 @@ describe("dashboard components", () => {
       "href",
       "https://news.ycombinator.com/item?id=234"
     );
-    expect(screen.getByRole("link")).toHaveStyle({ animationDelay: "320ms" });
+    expect(screen.getByRole("link").closest(".animate-slide-up")).toHaveStyle({ animationDelay: "320ms" });
 
     rerender(createElement(StoryCard, { story: jobStory }));
     expect(screen.getByText("Job")).toBeInTheDocument();
@@ -374,5 +386,82 @@ describe("dashboard components", () => {
     await waitFor(() =>
       expect(screen.getByText((content) => content.includes("ago"))).toBeInTheDocument()
     );
+  });
+
+  it("only renders a bookmark button when a save handler is provided", async () => {
+    const onToggleSave = vi.fn();
+    const user = userEvent.setup();
+    const { rerender } = render(createElement(StoryCard, { story: sampleStory }));
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+
+    rerender(createElement(StoryCard, { story: sampleStory, onToggleSave }));
+    const saveButton = screen.getByRole("button", { name: "Save story" });
+    expect(saveButton).toHaveAttribute("aria-pressed", "false");
+    await user.click(saveButton);
+    expect(onToggleSave).toHaveBeenCalledWith(sampleStory);
+
+    rerender(createElement(StoryCard, { story: sampleStory, onToggleSave, isSaved: true }));
+    expect(screen.getByRole("button", { name: "Remove bookmark" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("marks saved stories in the grid", () => {
+    render(createElement(StoryGrid, {
+      stories: [sampleStory, { ...sampleStory, objectID: "999", title: "Other" }],
+      isLoading: false,
+      savedIds: ["123"],
+      onToggleSave: vi.fn(),
+    }));
+    expect(screen.getByRole("button", { name: "Remove bookmark" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save story" })).toBeInTheDocument();
+  });
+
+  it("hides bookmarking for anonymous visitors and offers sign-in", () => {
+    useSearchMock.mockReturnValue({
+      query: "", storyType: "all", dateRange: "all", sortBy: "date_desc",
+      page: 0, results: sampleResults, isLoading: false, error: null,
+      setQuery: vi.fn(), setStoryType: vi.fn(), setDateRange: vi.fn(),
+      setSortBy: vi.fn(), setPage: vi.fn(),
+    });
+    render(createElement(Dashboard));
+    expect(screen.getByRole("button", { name: "Sign in with GitHub" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Save story" })).not.toBeInTheDocument();
+  });
+
+  it("toggles bookmarks optimistically for signed-in users", async () => {
+    useSearchMock.mockReturnValue({
+      query: "", storyType: "all", dateRange: "all", sortBy: "date_desc",
+      page: 0, results: sampleResults, isLoading: false, error: null,
+      setQuery: vi.fn(), setStoryType: vi.fn(), setDateRange: vi.fn(),
+      setSortBy: vi.fn(), setPage: vi.fn(),
+    });
+    let finishSave: () => void = () => {};
+    toggleBookmarkMock.mockImplementationOnce(
+      () => new Promise<void>((resolve) => { finishSave = resolve; })
+    );
+    const user = userEvent.setup();
+    render(createElement(Dashboard, {
+      user: { id: "user-1", name: "octocat", avatarUrl: null },
+      savedIds: [],
+    }));
+    expect(screen.getByText("octocat")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Save story" }));
+    // While the server action is pending, the optimistic state shows the story as saved.
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Remove bookmark" })).toHaveAttribute("aria-pressed", "true")
+    );
+    expect(toggleBookmarkMock).toHaveBeenCalledWith(sampleStory, false);
+    finishSave();
+
+    // Once settled (and the page revalidated), the prop drives the state again.
+    await waitFor(() => expect(screen.getByRole("button", { name: "Save story" })).toBeInTheDocument());
+
+    cleanup();
+    render(createElement(Dashboard, {
+      user: { id: "user-1", name: "octocat", avatarUrl: null },
+      savedIds: ["123"],
+    }));
+    await user.click(screen.getByRole("button", { name: "Remove bookmark" }));
+    await waitFor(() => expect(toggleBookmarkMock).toHaveBeenCalledWith(sampleStory, true));
   });
 });
