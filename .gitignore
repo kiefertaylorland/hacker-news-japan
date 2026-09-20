@@ -23,3 +23,8 @@ yarn-error.log*
 .vercel
 *.tsbuildinfo
 next-env.d.ts
+.env*
+
+# Supabase CLI local secrets
+.env.*.local
+supabase/.temp/
