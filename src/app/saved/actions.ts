@@ -17,7 +17,10 @@ export async function toggleBookmark(story: HNStory, isSaved: boolean) {
   const table = supabase.from("bookmarks");
   const { error } = isSaved
     ? await table.delete().eq("user_id", user.id).eq("object_id", story.objectID)
-    : await table.insert(toBookmarkRow(story, user.id));
+    : await table.upsert(toBookmarkRow(story, user.id), {
+        onConflict: "user_id,object_id",
+        ignoreDuplicates: true,
+      });
 
   if (error) {
     throw new Error(`Could not update bookmark: ${error.message}`);

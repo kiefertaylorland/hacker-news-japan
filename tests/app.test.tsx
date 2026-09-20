@@ -4,7 +4,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/components/dashboard/Dashboard", () => ({
-  Dashboard: () => createElement("div", null, "Dashboard content"),
+  Dashboard: ({ authError }: { authError?: boolean }) =>
+    createElement("div", null, authError ? "Dashboard content (auth error)" : "Dashboard content"),
 }));
 
 vi.mock("@/components/dashboard/DashboardSkeleton", () => ({
@@ -27,15 +28,20 @@ import { getBookmarkIds } from "@/lib/bookmarks";
 
 describe("app entry points", () => {
   it("renders the home page with the current user's bookmarks", async () => {
-    render(await Home());
+    render(await Home({}));
     expect(screen.getByText("Dashboard content")).toBeInTheDocument();
     expect(getBookmarkIds).toHaveBeenCalledWith("user-1");
   });
 
   it("renders the home page for anonymous visitors", async () => {
     vi.mocked(getCurrentUser).mockResolvedValueOnce(null);
-    render(await Home());
+    render(await Home({ searchParams: Promise.resolve({}) }));
     expect(getBookmarkIds).toHaveBeenCalledWith(null);
+  });
+
+  it("passes a failed sign-in flag through to the dashboard", async () => {
+    render(await Home({ searchParams: Promise.resolve({ auth_error: "1" }) }));
+    expect(screen.getByText("Dashboard content (auth error)")).toBeInTheDocument();
   });
 
   it("renders the loading page", () => {

@@ -11,8 +11,8 @@ The owner wants real sign-in. Decisions confirmed with the user:
 | What auth unlocks | **Bookmarks / saved stories** (+ the sign-in/out plumbing) |
 | Hosting | **Move to Vercel**, drop static export, so we can use server-side sessions (HttpOnly cookies) |
 | Sign-in methods | **GitHub OAuth** only, for now |
-| Backend | **New Supabase project** under the user's *personal* Supabase account (kland7@wgu.edu, org "Kiefer Land Consulting") — the user will run `! supabase login` to switch the CLI |
-| Vercel account | **Personal Vercel account** — the user will run `! vercel login` (CLI is currently on the `cloudmotion` team) |
+| Backend | **New Supabase project** under the user's *personal* Supabase account (<personal Supabase account>, personal org) — the user will run `! supabase login` to switch the CLI |
+| Vercel account | **Personal Vercel account** — the user will run `! vercel login` (CLI is currently on the work team) |
 | GitHub Pages | **Delete `deploy.yml`, keep `ci.yml`**; README points at Vercel |
 
 ### Why Supabase Auth (chosen over Auth.js / Clerk)
@@ -35,7 +35,7 @@ The owner wants real sign-in. Decisions confirmed with the user:
 
 Do these **before** implementation step 5 (Supabase provisioning):
 
-1. **Switch Supabase CLI account:** `! supabase login` → sign in as kland7@wgu.edu.
+1. **Switch Supabase CLI account:** `! supabase login` → sign in as <personal Supabase account>.
 2. **Switch Vercel CLI account:** `! vercel login` (personal scope). Then `vercel switch` if a team picker appears.
 3. **Create a GitHub OAuth App** (github.com → Settings → Developer settings → OAuth Apps → New):
    - Homepage URL: the Vercel production URL (fill in after step 6, or use `http://localhost:3000` initially)
@@ -140,7 +140,7 @@ Follow the existing flat, per-layer layout in `tests/` and the mocking style in 
 ### 8. Supabase provisioning (CLI, after the user has run `supabase login`)
 
 ```bash
-supabase orgs list                                  # get "Kiefer Land Consulting" org id
+supabase orgs list                                  # get "<personal org>" org id
 supabase projects create hacker-news-japan --org-id <ORG_ID> --region us-west-1 --db-password "<generated>"
 supabase init                                       # creates supabase/config.toml
 supabase link --project-ref <REF>
@@ -167,7 +167,7 @@ GitHub client id/secret live in the gitignored `.env` for the CLI. Verify afterw
 vercel link            # new project "hacker-news-japan" in personal scope
 vercel env add NEXT_PUBLIC_SUPABASE_URL production preview development
 vercel env add NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY production preview development
-vercel git connect     # connect kiefertaylorland/hacker-news-japan for auto-deploys
+vercel git connect     # connect <owner>/hacker-news-japan for auto-deploys
 vercel deploy          # preview deploy of the auth branch to smoke-test OAuth end-to-end
 ```
 Then set `site_url` in step 8 to the production URL and re-run `supabase config push`.
@@ -178,7 +178,7 @@ Then set `site_url` in step 8 to the production URL and re-run `supabase config 
 2. Commit on `auth` in logical chunks (config/un-static, supabase plumbing + proxy, auth UI, bookmarks, tests, docs/env).
 3. `git push -u origin auth`.
 4. `gh pr create --draft --base main --title "feat: GitHub sign-in and story bookmarks (Supabase Auth, Vercel)"` with a body covering: why Supabase, the hosting move, manual follow-ups (disable Pages, confirm GitHub OAuth App URLs), env vars.
-5. Request Copilot review: `gh pr edit <n> --add-reviewer copilot-pull-request-reviewer[bot]` (fallback: `gh api -X POST repos/kiefertaylorland/hacker-news-japan/pulls/<n>/requested_reviewers -f 'reviewers[]=copilot-pull-request-reviewer[bot]'`). If Copilot won't review drafts, flag it — `gh pr ready` requires user approval per house rules.
+5. Request Copilot review: `gh pr edit <n> --add-reviewer copilot-pull-request-reviewer[bot]` (fallback: `gh api -X POST repos/<owner>/hacker-news-japan/pulls/<n>/requested_reviewers -f 'reviewers[]=copilot-pull-request-reviewer[bot]'`). If Copilot won't review drafts, flag it — `gh pr ready` requires user approval per house rules.
 
 ---
 

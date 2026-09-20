@@ -77,7 +77,7 @@ function mockQuery(result: { data?: unknown; error?: unknown }) {
   builder.eq = vi.fn(chain);
   builder.order = vi.fn(chain);
   builder.delete = vi.fn(chain);
-  builder.insert = vi.fn(async () => result);
+  builder.upsert = vi.fn(async () => result);
   builder.then = vi.fn((resolve: (value: unknown) => unknown) => resolve(result));
   const from = vi.fn(() => builder);
   mockedCreateClient.mockResolvedValue({ from } as never);
@@ -110,6 +110,9 @@ describe("bookmark queries", () => {
 
     mockQuery({ data: null });
     expect(await getBookmarkIds("user-1")).toEqual([]);
+
+    mockQuery({ data: null, error: { message: "down" } });
+    await expect(getBookmarkIds("user-1")).rejects.toThrow("Could not load bookmarks: down");
   });
 
   it("lists bookmarks newest first as stories", async () => {
@@ -119,6 +122,9 @@ describe("bookmark queries", () => {
 
     mockQuery({ data: null });
     expect(await listBookmarks("user-1")).toEqual([]);
+
+    mockQuery({ data: null, error: { message: "down" } });
+    await expect(listBookmarks("user-1")).rejects.toThrow("Could not load bookmarks: down");
   });
 });
 
@@ -128,11 +134,14 @@ describe("toggleBookmark", () => {
     await expect(toggleBookmark(story, false)).rejects.toThrow("REDIRECT:/?auth_error=1");
   });
 
-  it("inserts a bookmark and revalidates both pages", async () => {
+  it("upserts a bookmark idempotently and revalidates both pages", async () => {
     mockedGetCurrentUser.mockResolvedValue(authUser);
     const { builder } = mockQuery({ error: null });
     await toggleBookmark(story, false);
-    expect(builder.insert).toHaveBeenCalledWith(row);
+    expect(builder.upsert).toHaveBeenCalledWith(row, {
+      onConflict: "user_id,object_id",
+      ignoreDuplicates: true,
+    });
     expect(revalidatePath).toHaveBeenCalledWith("/");
     expect(revalidatePath).toHaveBeenCalledWith("/saved");
   });

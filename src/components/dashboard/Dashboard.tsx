@@ -16,11 +16,12 @@ import { Pagination } from "./Pagination";
 interface DashboardProps {
   user?: AuthUser | null;
   savedIds?: string[];
+  authError?: boolean;
 }
 
 const EMPTY_IDS: string[] = [];
 
-export function Dashboard({ user = null, savedIds = EMPTY_IDS }: DashboardProps) {
+export function Dashboard({ user = null, savedIds = EMPTY_IDS, authError = false }: DashboardProps) {
   const {
     query,
     storyType,
@@ -87,6 +88,13 @@ export function Dashboard({ user = null, savedIds = EMPTY_IDS }: DashboardProps)
 
         {/* Sort Controls */}
         <SortControls sortBy={sortBy} onChange={setSortBy} />
+
+        {/* Auth error (from a failed sign-in redirect) */}
+        {authError && (
+          <div role="alert" className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-red-300 backdrop-blur-md">
+            Sign-in with GitHub didn&apos;t complete. Please try again.
+          </div>
+        )}
 
         {/* Error State */}
         {error && (

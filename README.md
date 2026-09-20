@@ -66,7 +66,7 @@ npm test        # vitest with 100% coverage thresholds
 npm run build
 ```
 
-These run on every pull request via GitHub Actions.
+Lint, typecheck, and tests run on every pull request via GitHub Actions; the build runs on Vercel for each deployment.
 
 ## Deploy
 

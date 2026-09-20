@@ -415,6 +415,17 @@ describe("dashboard components", () => {
     expect(screen.getByRole("button", { name: "Save story" })).toBeInTheDocument();
   });
 
+  it("shows a notice when a sign-in attempt failed", () => {
+    useSearchMock.mockReturnValue({
+      query: "", storyType: "all", dateRange: "all", sortBy: "date_desc",
+      page: 0, results: null, isLoading: false, error: null,
+      setQuery: vi.fn(), setStoryType: vi.fn(), setDateRange: vi.fn(),
+      setSortBy: vi.fn(), setPage: vi.fn(),
+    });
+    render(createElement(Dashboard, { authError: true }));
+    expect(screen.getByRole("alert")).toHaveTextContent("Sign-in with GitHub didn't complete");
+  });
+
   it("hides bookmarking for anonymous visitors and offers sign-in", () => {
     useSearchMock.mockReturnValue({
       query: "", storyType: "all", dateRange: "all", sortBy: "date_desc",

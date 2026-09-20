@@ -45,16 +45,18 @@ export function toHNStory(row: BookmarkRow): HNStory {
 export async function getBookmarkIds(userId: string | null): Promise<string[]> {
   if (!userId) return [];
   const supabase = await createClient();
-  const { data } = await supabase.from("bookmarks").select("object_id").eq("user_id", userId);
+  const { data, error } = await supabase.from("bookmarks").select("object_id").eq("user_id", userId);
+  if (error) throw new Error(`Could not load bookmarks: ${error.message}`);
   return (data ?? []).map((row: { object_id: string }) => row.object_id);
 }
 
 export async function listBookmarks(userId: string): Promise<HNStory[]> {
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("bookmarks")
     .select("user_id, object_id, title, url, author, points, num_comments, created_at_i, tags")
     .eq("user_id", userId)
     .order("saved_at", { ascending: false });
+  if (error) throw new Error(`Could not load bookmarks: ${error.message}`);
   return ((data ?? []) as BookmarkRow[]).map(toHNStory);
 }

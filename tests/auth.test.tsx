@@ -67,6 +67,7 @@ describe("request origin helpers", () => {
     expect(sanitizeNextPath(null)).toBe("/");
     expect(sanitizeNextPath("https://evil.example")).toBe("/");
     expect(sanitizeNextPath("//evil.example")).toBe("/");
+    expect(sanitizeNextPath("/\\evil.example")).toBe("/");
     expect(sanitizeNextPath("/saved")).toBe("/saved");
   });
 });
