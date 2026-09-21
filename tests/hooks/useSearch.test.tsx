@@ -1,9 +1,9 @@
-import { renderHook, act, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { useDebounce } from "@/hooks/useDebounce";
 import { useSearch } from "@/hooks/useSearch";
 import { searchStories } from "@/lib/search/api";
 import type { AlgoliaResponse } from "@/lib/types";
+import { makeResults } from "../fixtures/stories";
 
 let currentSearchParams = new URLSearchParams();
 const pushMock = vi.fn();
@@ -21,27 +21,7 @@ vi.mock("@/lib/search/api", () => ({
 
 const mockedSearchStories = vi.mocked(searchStories);
 
-const response: AlgoliaResponse = {
-  hits: [
-    {
-      objectID: "1",
-      title: "Japan story",
-      url: "https://example.com",
-      author: "alice",
-      points: 10,
-      num_comments: 3,
-      created_at: "2024-01-01T00:00:00.000Z",
-      created_at_i: 1,
-      _tags: ["story"],
-      story_id: 1,
-    },
-  ],
-  nbHits: 1,
-  nbPages: 3,
-  page: 0,
-  hitsPerPage: 30,
-  query: "Japan",
-};
+const response = makeResults();
 
 function deferredResponse() {
   let resolve!: (value: AlgoliaResponse) => void;
@@ -53,66 +33,16 @@ function deferredResponse() {
   return { promise, resolve, reject };
 }
 
-describe("hooks", () => {
+async function renderSearch() {
+  const { result } = renderHook(() => useSearch());
+  return result;
+}
+
+describe("useSearch", () => {
   beforeEach(() => {
     currentSearchParams = new URLSearchParams();
     pushMock.mockReset();
     mockedSearchStories.mockReset();
-  });
-
-  it("returns the current value immediately from useDebounce", () => {
-    vi.useFakeTimers();
-    const { result } = renderHook(() => useDebounce("tokyo"));
-    expect(result.current).toBe("tokyo");
-  });
-
-  it("debounces updates until the delay has elapsed", () => {
-    vi.useFakeTimers();
-    const { result, rerender } = renderHook(
-      ({ value, delay }: { value: string; delay: number }) => useDebounce(value, delay),
-      {
-        initialProps: { value: "tokyo", delay: 300 },
-      }
-    );
-
-    rerender({ value: "osaka", delay: 300 });
-    expect(result.current).toBe("tokyo");
-
-    act(() => {
-      vi.advanceTimersByTime(299);
-    });
-    expect(result.current).toBe("tokyo");
-
-    act(() => {
-      vi.advanceTimersByTime(1);
-    });
-    expect(result.current).toBe("osaka");
-  });
-
-  it("cancels stale debounce timers on rerender", () => {
-    vi.useFakeTimers();
-    const { result, rerender } = renderHook(
-      ({ value }: { value: string }) => useDebounce(value, 300),
-      {
-        initialProps: { value: "tokyo" },
-      }
-    );
-
-    rerender({ value: "kyoto" });
-    act(() => {
-      vi.advanceTimersByTime(150);
-    });
-    rerender({ value: "nagoya" });
-
-    act(() => {
-      vi.advanceTimersByTime(299);
-    });
-    expect(result.current).toBe("tokyo");
-
-    act(() => {
-      vi.advanceTimersByTime(1);
-    });
-    expect(result.current).toBe("nagoya");
   });
 
   it("reads initial URL params and fetches results", async () => {
@@ -144,23 +74,17 @@ describe("hooks", () => {
     expect(result.current.error).toBeNull();
   });
 
-  it("surfaces unknown errors and clears results", async () => {
-    mockedSearchStories.mockRejectedValue("boom");
+  it.each([
+    ["a non-Error rejection", "boom", "Unknown error"],
+    ["an Error rejection", new Error("Request failed"), "Request failed"],
+  ])("surfaces %s and clears results", async (_label, reason, message) => {
+    mockedSearchStories.mockRejectedValue(reason);
 
-    const { result } = renderHook(() => useSearch());
+    const result = await renderSearch();
 
-    await waitFor(() => expect(result.current.error).toBe("Unknown error"));
+    await waitFor(() => expect(result.current.error).toBe(message));
     expect(result.current.results).toBeNull();
     expect(result.current.isLoading).toBe(false);
-  });
-
-  it("surfaces Error messages from failed searches", async () => {
-    mockedSearchStories.mockRejectedValue(new Error("Request failed"));
-
-    const { result } = renderHook(() => useSearch());
-
-    await waitFor(() => expect(result.current.error).toBe("Request failed"));
-    expect(result.current.results).toBeNull();
   });
 
   it("updates URL and state through each setter", async () => {
