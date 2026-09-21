@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import * as algolia from "@/lib/search/algolia";
-import { searchStories } from "@/lib/search/api";
+import { fetchSearchWindow, pageSearchWindow, searchStories, searchWindowKey } from "@/lib/search/api";
 import { DEFAULT_SEARCH_PARAMS, HITS_PER_PAGE } from "@/lib/constants";
 import type { SortBy } from "@/lib/types";
 import { makeResults, makeStory } from "../../fixtures/stories";
@@ -48,6 +48,30 @@ describe("searchStories", () => {
 
     const beyond = await searchStories({ ...DEFAULT_SEARCH_PARAMS, sortBy: "points", page: 3 });
     expect(beyond.hits).toEqual([]);
+  });
+
+  it("always requests page 0 of the window regardless of the requested page", async () => {
+    const { buildSpy } = spyOnAlgolia();
+
+    await fetchSearchWindow({ ...DEFAULT_SEARCH_PARAMS, sortBy: "comments", page: 4 });
+
+    expect(buildSpy).toHaveBeenCalledWith({ ...DEFAULT_SEARCH_PARAMS, sortBy: "comments", page: 0 });
+  });
+
+  it("keys the window by every param except page", () => {
+    const base = { ...DEFAULT_SEARCH_PARAMS, sortBy: "points" as const, query: "tokyo" };
+    expect(searchWindowKey({ ...base, page: 0 })).toBe(searchWindowKey({ ...base, page: 7 }));
+    expect(searchWindowKey(base)).not.toBe(searchWindowKey({ ...base, dateRange: "week" }));
+    expect(searchWindowKey(base)).not.toBe(searchWindowKey({ ...base, storyType: "job" }));
+    expect(searchWindowKey(base)).not.toBe(searchWindowKey({ ...base, sortBy: "comments" }));
+    expect(searchWindowKey(base)).not.toBe(searchWindowKey({ ...base, query: "osaka" }));
+  });
+
+  it("does not mutate the window when slicing a page", () => {
+    const window = makeResults({ hits: sampleHits, nbHits: 2 });
+    const page = pageSearchWindow(window, 0);
+    expect(page.hits).not.toBe(window.hits);
+    expect(window).toEqual(makeResults({ hits: sampleHits, nbHits: 2 }));
   });
 
   it.each(["relevance", "date_desc"] satisfies SortBy[])(

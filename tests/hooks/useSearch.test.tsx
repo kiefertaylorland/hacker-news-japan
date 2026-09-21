@@ -1,9 +1,9 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useSearch } from "@/hooks/useSearch";
-import { searchStories } from "@/lib/search/api";
+import { fetchSearchWindow, pageSearchWindow, searchStories } from "@/lib/search/api";
 import type { AlgoliaResponse, SearchParams } from "@/lib/types";
-import { makeResults } from "../fixtures/stories";
+import { makeResults, makeStory } from "../fixtures/stories";
 
 let currentSearchParams = new URLSearchParams();
 let pushState: ReturnType<typeof vi.spyOn>;
@@ -13,11 +13,14 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => currentSearchParams,
 }));
 
-vi.mock("@/lib/search/api", () => ({
+vi.mock("@/lib/search/api", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/search/api")>()),
   searchStories: vi.fn(),
+  fetchSearchWindow: vi.fn(),
 }));
 
 const mockedSearchStories = vi.mocked(searchStories);
+const mockedFetchSearchWindow = vi.mocked(fetchSearchWindow);
 
 const response = makeResults();
 
@@ -42,13 +45,14 @@ describe("useSearch", () => {
     pushState = vi.spyOn(window.history, "pushState").mockImplementation(() => {});
     replaceState = vi.spyOn(window.history, "replaceState").mockImplementation(() => {});
     mockedSearchStories.mockReset();
+    mockedFetchSearchWindow.mockReset();
   });
 
   it("reads initial URL params and fetches results", async () => {
     currentSearchParams = new URLSearchParams(
       "query=tokyo&storyType=job&dateRange=week&sortBy=points&page=2"
     );
-    mockedSearchStories.mockResolvedValue(response);
+    mockedFetchSearchWindow.mockResolvedValue(response);
 
     const { result } = renderHook(() => useSearch());
 
@@ -59,7 +63,7 @@ describe("useSearch", () => {
     expect(result.current.page).toBe(2);
 
     await waitFor(() =>
-      expect(mockedSearchStories).toHaveBeenCalledWith({
+      expect(mockedFetchSearchWindow).toHaveBeenCalledWith({
         query: "tokyo",
         storyType: "job",
         dateRange: "week",
@@ -67,8 +71,9 @@ describe("useSearch", () => {
         page: 2,
       }, expect.any(AbortSignal))
     );
+    expect(mockedSearchStories).not.toHaveBeenCalled();
 
-    await waitFor(() => expect(result.current.results).toEqual(response));
+    await waitFor(() => expect(result.current.results).toEqual(pageSearchWindow(response, 2)));
     expect(result.current.isLoading).toBe(false);
     expect(result.current.error).toBeNull();
   });
@@ -202,6 +207,36 @@ describe("useSearch", () => {
     expect(mockedSearchStories).toHaveBeenCalledTimes(2);
   });
 
+  it("reuses the fetched window across page changes for client sorts", async () => {
+    currentSearchParams = new URLSearchParams("sortBy=comments");
+    const window = makeResults({
+      hits: Array.from({ length: 65 }, (_, i) => makeStory({ objectID: String(i), num_comments: 65 - i })),
+      nbHits: 19692,
+    });
+    mockedFetchSearchWindow.mockResolvedValue(window);
+    const { result } = renderHook(() => useSearch());
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(mockedFetchSearchWindow).toHaveBeenCalledTimes(1);
+    expect(result.current.results).toEqual(pageSearchWindow(window, 0));
+
+    await act(async () => result.current.setPage(1));
+    expect(mockedFetchSearchWindow).toHaveBeenCalledTimes(1);
+    expect(result.current.results?.hits.map((hit) => hit.objectID)).toEqual(
+      window.hits.slice(30, 60).map((hit) => hit.objectID)
+    );
+    expect(result.current.results).toMatchObject({ page: 1, nbPages: 3, nbHits: 65 });
+    expect(result.current.isLoading).toBe(false);
+
+    await act(async () => result.current.setDateRange("week"));
+    expect(mockedFetchSearchWindow).toHaveBeenCalledTimes(2);
+    expect(mockedFetchSearchWindow).toHaveBeenLastCalledWith(
+      { query: "", storyType: "all", dateRange: "week", sortBy: "comments", page: 0 },
+      expect.any(AbortSignal)
+    );
+    expect(mockedSearchStories).not.toHaveBeenCalled();
+  });
+
   it("aborts requests when each filter or page changes", async () => {
     mockedSearchStories.mockResolvedValue(response);
     const { result } = renderHook(() => useSearch());
@@ -214,7 +249,7 @@ describe("useSearch", () => {
     const changes = [
       () => result.current.setStoryType("job"),
       () => result.current.setDateRange("week"),
-      () => result.current.setSortBy("points"),
+      () => result.current.setSortBy("relevance"),
       () => result.current.setPage(2),
     ];
     for (const change of changes) {
@@ -432,15 +467,25 @@ describe("useSearch", () => {
         page: 0,
       };
       const sorted = { ...response, query: "sorted" };
+      mockedFetchSearchWindow.mockResolvedValue(sorted);
       mockedSearchStories.mockResolvedValue(sorted);
       const { result } = renderHook(() => useSearch(response, initialParams));
       expect(mockedSearchStories).not.toHaveBeenCalled();
+      expect(mockedFetchSearchWindow).not.toHaveBeenCalled();
 
       // useSearchParams still reports the server URL here: Next syncs it asynchronously.
       await act(async () => result.current.setSortBy("points"));
+      expect(mockedFetchSearchWindow).toHaveBeenCalledTimes(1);
+      expect(mockedFetchSearchWindow).toHaveBeenCalledWith(
+        { ...initialParams, sortBy: "points" },
+        expect.any(AbortSignal)
+      );
+      await waitFor(() => expect(result.current.results).toEqual(pageSearchWindow(sorted, 0)));
+
+      await act(async () => result.current.setSortBy("relevance"));
       expect(mockedSearchStories).toHaveBeenCalledTimes(1);
       expect(mockedSearchStories).toHaveBeenCalledWith(
-        { ...initialParams, sortBy: "points" },
+        { ...initialParams, sortBy: "relevance" },
         expect.any(AbortSignal)
       );
       await waitFor(() => expect(result.current.results).toBe(sorted));
@@ -448,7 +493,7 @@ describe("useSearch", () => {
       await act(async () => result.current.setStoryType("job"));
       expect(mockedSearchStories).toHaveBeenCalledTimes(2);
       expect(mockedSearchStories).toHaveBeenLastCalledWith(
-        { ...initialParams, sortBy: "points", storyType: "job" },
+        { ...initialParams, sortBy: "relevance", storyType: "job" },
         expect.any(AbortSignal)
       );
     });

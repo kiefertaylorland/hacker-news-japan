@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { searchStories } from "@/lib/search/api";
+import { fetchSearchWindow, pageSearchWindow, searchStories, searchWindowKey } from "@/lib/search/api";
+import { CLIENT_SORTS } from "@/lib/search/algolia";
 import type { AlgoliaResponse, DateRange, SearchParams, SortBy, StoryType } from "@/lib/types";
 import { readSearchParams, sameSearchParams, toSearchUrl } from "@/lib/search/params";
 import { useDebounce } from "./useDebounce";
@@ -36,6 +37,8 @@ export function useSearch(
   const initialParamsRef = useRef(initialParams ?? params);
   // True while the typed query has not been written to the URL yet.
   const queryDirtyRef = useRef(false);
+  // Last sorted window fetched for a client sort; page changes slice it instead of refetching.
+  const windowRef = useRef<{ key: string; data: AlgoliaResponse } | null>(null);
 
   // Debounced query for API calls
   const debouncedQuery = useDebounce(query, 300);
@@ -76,13 +79,28 @@ export function useSearch(
       return;
     }
 
+    const windowKey = CLIENT_SORTS.has(sortBy) ? searchWindowKey(current) : null;
+    if (windowKey !== null && windowRef.current?.key === windowKey) {
+      setResults(pageSearchWindow(windowRef.current.data, page));
+      setIsLoading(false);
+      setError(null);
+      return;
+    }
+
     const controller = new AbortController();
     const fetchResults = async () => {
       setIsLoading(true);
       setError(null);
 
       try {
-        const data = await searchStories(current, controller.signal);
+        let data: AlgoliaResponse;
+        if (windowKey === null) {
+          data = await searchStories(current, controller.signal);
+        } else {
+          const window = await fetchSearchWindow(current, controller.signal);
+          windowRef.current = { key: windowKey, data: window };
+          data = pageSearchWindow(window, page);
+        }
         if (controller.signal.aborted) return;
         setResults(data);
       } catch (err) {
