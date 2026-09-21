@@ -1,16 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { searchStories } from "@/lib/search/api";
-import type {
-  AlgoliaResponse,
-  DateRange,
-  SearchParams,
-  SortBy,
-  StoryType,
-} from "@/lib/types";
-import { DEFAULT_SEARCH_PARAMS } from "@/lib/constants";
+import type { AlgoliaResponse, DateRange, SearchParams, SortBy, StoryType } from "@/lib/types";
+import { readSearchParams, sameSearchParams, toSearchUrl } from "@/lib/search/params";
 import { useDebounce } from "./useDebounce";
 
 interface UseSearchReturn extends SearchParams {
@@ -24,50 +18,23 @@ interface UseSearchReturn extends SearchParams {
   setPage: (page: number) => void;
 }
 
-function readSearchParams(searchParams: URLSearchParams): SearchParams {
-  const page = Number.parseInt(searchParams.get("page") || "", 10);
-  return {
-    query: searchParams.get("query") || DEFAULT_SEARCH_PARAMS.query,
-    storyType: (searchParams.get("storyType") as StoryType) || DEFAULT_SEARCH_PARAMS.storyType,
-    dateRange: (searchParams.get("dateRange") as DateRange) || DEFAULT_SEARCH_PARAMS.dateRange,
-    sortBy: (searchParams.get("sortBy") as SortBy) || DEFAULT_SEARCH_PARAMS.sortBy,
-    page: Number.isNaN(page) || page < 0 ? DEFAULT_SEARCH_PARAMS.page : page,
-  };
-}
-
-function toSearchUrl(params: SearchParams): string {
-  const query = new URLSearchParams({
-    query: params.query,
-    storyType: params.storyType,
-    dateRange: params.dateRange,
-    sortBy: params.sortBy,
-    page: params.page.toString(),
-  });
-  return `/?${query.toString()}`;
-}
-
-function sameSearchParams(left: SearchParams, right: SearchParams): boolean {
-  return (
-    left.query === right.query &&
-    left.storyType === right.storyType &&
-    left.dateRange === right.dateRange &&
-    left.sortBy === right.sortBy &&
-    left.page === right.page
-  );
-}
-
-export function useSearch(): UseSearchReturn {
+export function useSearch(
+  initialResults: AlgoliaResponse | null = null,
+  initialParams?: SearchParams
+): UseSearchReturn {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const [params, setParams] = useState<SearchParams>(() => readSearchParams(searchParams));
   const { query, storyType, dateRange, sortBy, page } = params;
+  // Params the server used to produce `initialResults`; matching them skips the client fetch.
+  const initialParamsRef = useRef(initialParams ?? params);
 
   // Debounced query for API calls
   const debouncedQuery = useDebounce(query, 300);
 
   // Results state
-  const [results, setResults] = useState<AlgoliaResponse | null>(null);
+  const [results, setResults] = useState<AlgoliaResponse | null>(initialResults);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -86,16 +53,27 @@ export function useSearch(): UseSearchReturn {
       return;
     }
 
+    const current = { query: debouncedQuery, storyType, dateRange, sortBy, page };
+    const serverParams = initialParams ?? initialParamsRef.current;
+    const urlParams = readSearchParams(searchParams);
+    if (
+      initialResults &&
+      (sameSearchParams(current, serverParams) ||
+        (initialParams !== undefined && sameSearchParams(urlParams, serverParams)))
+    ) {
+      setResults(initialResults);
+      setIsLoading(false);
+      setError(null);
+      return;
+    }
+
     const controller = new AbortController();
     const fetchResults = async () => {
       setIsLoading(true);
       setError(null);
 
       try {
-        const data = await searchStories(
-          { query: debouncedQuery, storyType, dateRange, sortBy, page },
-          controller.signal
-        );
+        const data = await searchStories(current, controller.signal);
         if (controller.signal.aborted) return;
         setResults(data);
       } catch (err) {
@@ -112,7 +90,7 @@ export function useSearch(): UseSearchReturn {
     // Fetch results with current parameters (empty query is valid—returns top stories)
     fetchResults();
     return () => controller.abort();
-  }, [query, debouncedQuery, storyType, dateRange, sortBy, page]);
+  }, [query, debouncedQuery, storyType, dateRange, sortBy, page, initialResults, initialParams, searchParams]);
 
   // Any filter change resets to the first page.
   const applyFilterChange = useCallback(

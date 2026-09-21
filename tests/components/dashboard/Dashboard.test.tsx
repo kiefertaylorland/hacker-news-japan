@@ -11,7 +11,7 @@ import { mockSearchState } from "../../helpers/mockSearchState";
 const useSearchMock = vi.fn();
 
 vi.mock("@/hooks/useSearch", () => ({
-  useSearch: () => useSearchMock(),
+  useSearch: (initialResults: unknown, initialParams: unknown) => useSearchMock(initialResults, initialParams),
 }));
 
 const toggleBookmarkMock = vi.fn(async (_story: HNStory, _isSaved: boolean) => {});
@@ -41,8 +41,9 @@ describe("Dashboard", () => {
       })
     );
 
-    render(createElement(Dashboard));
+    render(createElement(Dashboard, { initialResults: sampleResults }));
 
+    expect(useSearchMock).toHaveBeenCalledWith(sampleResults, undefined);
     expect(screen.getByText("日本")).toBeInTheDocument();
     expect(screen.getByText("Request failed")).toBeInTheDocument();
     expect(screen.getByDisplayValue("tokyo")).toBeInTheDocument();

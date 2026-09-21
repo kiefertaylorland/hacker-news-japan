@@ -7,6 +7,7 @@ import { ErrorAlert } from "@/components/layout/ErrorAlert";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { PageShell } from "@/components/layout/PageShell";
 import type { AuthUser } from "@/lib/auth/user";
+import type { AlgoliaResponse, SearchParams } from "@/lib/types";
 import { SearchBar } from "@/components/search/SearchBar";
 import { FilterBar } from "@/components/search/FilterBar";
 import { SortControls } from "@/components/search/SortControls";
@@ -18,11 +19,19 @@ interface DashboardProps {
   user?: AuthUser | null;
   savedIds?: string[];
   authError?: boolean;
+  initialResults?: AlgoliaResponse | null;
+  initialParams?: SearchParams;
 }
 
 const EMPTY_IDS: string[] = [];
 
-export function Dashboard({ user = null, savedIds = EMPTY_IDS, authError = false }: DashboardProps) {
+export function Dashboard({
+  user = null,
+  savedIds = EMPTY_IDS,
+  authError = false,
+  initialResults = null,
+  initialParams,
+}: DashboardProps) {
   const {
     query,
     storyType,
@@ -37,7 +46,7 @@ export function Dashboard({ user = null, savedIds = EMPTY_IDS, authError = false
     setDateRange,
     setSortBy,
     setPage,
-  } = useSearch();
+  } = useSearch(initialResults, initialParams);
 
   const bookmarks = useOptimisticBookmarks(savedIds);
 
