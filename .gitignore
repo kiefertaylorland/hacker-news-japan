@@ -31,3 +31,6 @@ supabase/.temp/
 
 # jscpd
 .jscpd-report/
+
+# husky
+.husky/_

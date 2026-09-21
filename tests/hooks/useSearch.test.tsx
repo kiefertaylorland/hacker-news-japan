@@ -336,6 +336,29 @@ describe("useSearch", () => {
     }
   );
 
+  it.each(["success", "failure"] as const)(
+    "aborts on unmount before a pending client-sort window resolves (%s)",
+    async (outcome) => {
+      currentSearchParams = new URLSearchParams("sortBy=comments");
+      const pending = deferredResponse();
+      mockedFetchSearchWindow.mockReturnValue(pending.promise);
+      const render = vi.fn(() => useSearch());
+      const { unmount } = renderHook(render);
+      const signal = mockedFetchSearchWindow.mock.lastCall![1]!;
+      expect(signal.aborted).toBe(false);
+      unmount();
+      expect(signal.aborted).toBe(true);
+      const renderCount = render.mock.calls.length;
+
+      await act(async () => {
+        if (outcome === "success") pending.resolve(response);
+        else pending.reject(new Error("unmounted error"));
+      });
+      expect(render).toHaveBeenCalledTimes(renderCount);
+      expect(mockedFetchSearchWindow).toHaveBeenCalledTimes(1);
+    }
+  );
+
   it("defers rapid input from a nonzero page until the latest query settles", async () => {
     vi.useFakeTimers();
     currentSearchParams = new URLSearchParams("query=tokyo&page=3");
