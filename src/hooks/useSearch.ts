@@ -45,6 +45,16 @@ function toSearchUrl(params: SearchParams): string {
   return `/?${query.toString()}`;
 }
 
+function sameSearchParams(left: SearchParams, right: SearchParams): boolean {
+  return (
+    left.query === right.query &&
+    left.storyType === right.storyType &&
+    left.dateRange === right.dateRange &&
+    left.sortBy === right.sortBy &&
+    left.page === right.page
+  );
+}
+
 export function useSearch(): UseSearchReturn {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -59,6 +69,11 @@ export function useSearch(): UseSearchReturn {
   const [results, setResults] = useState<AlgoliaResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const next = readSearchParams(searchParams);
+    setParams((current) => (sameSearchParams(current, next) ? current : next));
+  }, [searchParams]);
 
   // Fetch results when debounced query or filters change
   useEffect(() => {

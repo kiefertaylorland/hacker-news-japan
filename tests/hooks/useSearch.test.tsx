@@ -74,6 +74,26 @@ describe("useSearch", () => {
     expect(result.current.error).toBeNull();
   });
 
+  it("syncs state when the URL search params change externally", async () => {
+    mockedSearchStories.mockResolvedValue(response);
+    const { result, rerender } = renderHook(() => useSearch());
+
+    await waitFor(() => expect(mockedSearchStories).toHaveBeenCalledTimes(1));
+
+    currentSearchParams = new URLSearchParams(
+      "query=tokyo&storyType=job&dateRange=week&sortBy=points&page=2"
+    );
+    rerender();
+
+    await waitFor(() => {
+      expect(result.current.query).toBe("tokyo");
+      expect(result.current.storyType).toBe("job");
+      expect(result.current.dateRange).toBe("week");
+      expect(result.current.sortBy).toBe("points");
+      expect(result.current.page).toBe(2);
+    });
+  });
+
   it.each([
     ["a non-Error rejection", "boom", "Unknown error"],
     ["an Error rejection", new Error("Request failed"), "Request failed"],
