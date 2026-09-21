@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { sanitizeNextPath } from "@/lib/auth/origin";
+import { AUTH_ERROR_PATH } from "@/lib/auth/constants";
+import { resolveRedirectOrigin, sanitizeNextPath } from "@/lib/auth/origin";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -11,13 +12,9 @@ export async function GET(request: Request) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      const forwardedHost = request.headers.get("x-forwarded-host");
-      if (forwardedHost && process.env.NODE_ENV !== "development") {
-        return NextResponse.redirect(`https://${forwardedHost}${next}`);
-      }
-      return NextResponse.redirect(`${origin}${next}`);
+      return NextResponse.redirect(`${resolveRedirectOrigin(request.headers, origin)}${next}`);
     }
   }
 
-  return NextResponse.redirect(`${origin}/?auth_error=1`);
+  return NextResponse.redirect(`${origin}${AUTH_ERROR_PATH}`);
 }

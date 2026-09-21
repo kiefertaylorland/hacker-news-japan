@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getRequestOrigin, sanitizeNextPath } from "@/lib/auth/origin";
+import { getRequestOrigin, resolveRedirectOrigin, sanitizeNextPath } from "@/lib/auth/origin";
 
 const headerValues = new Map<string, string>();
 
@@ -38,5 +38,24 @@ describe("sanitizeNextPath", () => {
     expect(sanitizeNextPath("//evil.example")).toBe("/");
     expect(sanitizeNextPath("/\\evil.example")).toBe("/");
     expect(sanitizeNextPath("/saved")).toBe("/saved");
+  });
+});
+
+describe("resolveRedirectOrigin", () => {
+  const fallback = "http://localhost:3000";
+  const proxied = new Headers({ "x-forwarded-host": "hnj.vercel.app" });
+
+  it("uses the forwarded host over https outside development", () => {
+    expect(resolveRedirectOrigin(proxied, fallback)).toBe("https://hnj.vercel.app");
+  });
+
+  it("ignores the forwarded host in development", () => {
+    vi.stubEnv("NODE_ENV", "development");
+    expect(resolveRedirectOrigin(proxied, fallback)).toBe(fallback);
+    vi.stubEnv("NODE_ENV", "test");
+  });
+
+  it("falls back to the request origin without a forwarded host", () => {
+    expect(resolveRedirectOrigin(new Headers(), fallback)).toBe(fallback);
   });
 });
