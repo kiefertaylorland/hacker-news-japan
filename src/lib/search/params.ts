@@ -4,8 +4,7 @@ import type { DateRange, SearchParams, SortBy, StoryType } from "../types";
 export type SearchParamsRecord = Record<string, string | string[] | undefined>;
 
 export function readSearchParams(searchParams: URLSearchParams): SearchParams {
-  // Stryker disable next-line StringLiteral: any non-numeric fallback parses to the same NaN,
-  // and a present, non-empty "page" value always wins the `||` before this fallback is read.
+  // Stryker disable next-line StringLiteral: any non-numeric fallback parses as NaN, while a non-empty page value wins the || before this fallback.
   const page = Number.parseInt(searchParams.get("page") || "", 10);
   return {
     query: searchParams.get("query") || DEFAULT_SEARCH_PARAMS.query,
