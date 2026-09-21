@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { searchStories } from "@/lib/search/api";
+import { fetchSearchWindow, pageSearchWindow, searchStories, searchWindowKey } from "@/lib/search/api";
+import { CLIENT_SORTS } from "@/lib/search/algolia";
 import type { AlgoliaResponse, DateRange, SearchParams, SortBy, StoryType } from "@/lib/types";
 import { readSearchParams, sameSearchParams, toSearchUrl } from "@/lib/search/params";
 import { useDebounce } from "./useDebounce";
@@ -34,10 +35,10 @@ export function useSearch(
   const { query, storyType, dateRange, sortBy, page } = params;
   // Params the server used to produce `initialResults`; matching them skips the client fetch.
   const initialParamsRef = useRef(initialParams ?? params);
-  // Latest params read from the URL, so the fetch effect need not depend on `searchParams`.
-  const urlParamsRef = useRef(params);
   // True while the typed query has not been written to the URL yet.
   const queryDirtyRef = useRef(false);
+  // Last sorted window fetched for a client sort; page changes slice it instead of refetching.
+  const windowRef = useRef<{ key: string; data: AlgoliaResponse } | null>(null);
 
   // Debounced query for API calls
   const debouncedQuery = useDebounce(query, 300);
@@ -49,7 +50,6 @@ export function useSearch(
 
   useEffect(() => {
     const next = readSearchParams(searchParams);
-    urlParamsRef.current = next;
     setParams((current) => (sameSearchParams(current, next) ? current : next));
   }, [searchParams]);
 
@@ -69,13 +69,19 @@ export function useSearch(
       window.history.replaceState(null, "", toSearchUrl(current));
     }
 
+    // Only the params the server actually rendered may reuse the seeded results; any
+    // client-side change must fetch (the server never re-renders on pushState).
     const serverParams = initialParams ?? initialParamsRef.current;
-    if (
-      initialResults &&
-      (sameSearchParams(current, serverParams) ||
-        (initialParams !== undefined && sameSearchParams(urlParamsRef.current, serverParams)))
-    ) {
+    if (initialResults && sameSearchParams(current, serverParams)) {
       setResults(initialResults);
+      setIsLoading(false);
+      setError(null);
+      return;
+    }
+
+    const windowKey = CLIENT_SORTS.has(sortBy) ? searchWindowKey(current) : null;
+    if (windowKey !== null && windowRef.current?.key === windowKey) {
+      setResults(pageSearchWindow(windowRef.current.data, page));
       setIsLoading(false);
       setError(null);
       return;
@@ -87,7 +93,15 @@ export function useSearch(
       setError(null);
 
       try {
-        const data = await searchStories(current, controller.signal);
+        let data: AlgoliaResponse;
+        if (windowKey === null) {
+          data = await searchStories(current, controller.signal);
+        } else {
+          const window = await fetchSearchWindow(current, controller.signal);
+          if (controller.signal.aborted) return;
+          windowRef.current = { key: windowKey, data: window }
+          data = pageSearchWindow(window, page);
+        }
         if (controller.signal.aborted) return;
         setResults(data);
       } catch (err) {

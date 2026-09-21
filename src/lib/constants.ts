@@ -2,6 +2,9 @@ import type { DateRange, StoryType, SortBy } from "./types";
 
 export const HITS_PER_PAGE = 30;
 
+/** Hits fetched in one request for sorts Algolia cannot do server-side (see CLIENT_SORTS); sorted and paginated locally. */
+export const CLIENT_SORT_WINDOW = 300;
+
 export const STORY_TYPE_OPTIONS: { label: string; value: StoryType }[] = [
   { label: "All Stories", value: "all" },
   { label: "Stories", value: "story" },

@@ -27,4 +27,15 @@ describe("ResultsHeader", () => {
     expect(screen.getByText("story")).toBeInTheDocument();
     expect(screen.getByText("about Japan")).toBeInTheDocument();
   });
+
+  it("labels client-sorted results as a top window", () => {
+    render(createElement(ResultsHeader, { query: "", results: makeResults({ nbHits: 300 }), isLoading: false, sortBy: "points" }));
+    expect(screen.getByText("Top")).toBeInTheDocument();
+    expect(screen.getByText("300")).toBeInTheDocument();
+  });
+
+  it("does not label server-sorted results", () => {
+    render(createElement(ResultsHeader, { query: "", results: makeResults({ nbHits: 300 }), isLoading: false, sortBy: "date_desc" }));
+    expect(screen.queryByText("Top")).not.toBeInTheDocument();
+  });
 });

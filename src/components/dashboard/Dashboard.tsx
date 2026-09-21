@@ -108,7 +108,7 @@ export function Dashboard({
 
       <div role="status" aria-live="polite" aria-atomic="true">
         {isLoading && <span className="sr-only">Loading stories</span>}
-        <ResultsHeader query={query} results={results} isLoading={isLoading} />
+        <ResultsHeader query={query} results={results} isLoading={isLoading} sortBy={sortBy} />
       </div>
 
       {/* Streamed bookmarks: stories render immediately and the save buttons appear once the ids

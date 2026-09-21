@@ -1,5 +1,5 @@
 import type { AlgoliaResponse, DateRange, HNStory, SearchParams, SortBy } from "../types";
-import { HITS_PER_PAGE } from "../constants";
+import { CLIENT_SORT_WINDOW, HITS_PER_PAGE } from "../constants";
 
 const ALGOLIA_API_BASE = "https://hn.algolia.com/api/v1";
 
@@ -27,10 +27,13 @@ export function buildAlgoliaURL({ query, storyType, dateRange, sortBy, page }: S
   // need client-side sorting (see CLIENT_SORTS).
   const endpoint = sortBy === "date_desc" ? "search_by_date" : "search";
 
+  // Client sorts fetch one fixed window from page 0 so the order is stable across
+  // pages; searchStories slices the requested page out of the sorted window.
+  const clientSorted = CLIENT_SORTS.has(sortBy);
   const params = new URLSearchParams({
     query: fullQuery,
-    page: page.toString(),
-    hitsPerPage: HITS_PER_PAGE.toString(),
+    page: clientSorted ? "0" : page.toString(),
+    hitsPerPage: (clientSorted ? CLIENT_SORT_WINDOW : HITS_PER_PAGE).toString(),
   });
 
   // Exclude comments when unfiltered: they lack a title field and break card rendering
