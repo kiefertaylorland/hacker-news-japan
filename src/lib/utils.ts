@@ -14,13 +14,3 @@ export function formatRelativeTime(dateString: string): string {
     return "unknown";
   }
 }
-
-export function getDomain(url: string | null): string {
-  if (!url) return "";
-  try {
-    const domain = new URL(url).hostname;
-    return domain.replace("www.", "");
-  } catch {
-    return "";
-  }
-}

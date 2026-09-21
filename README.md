@@ -62,11 +62,12 @@ supabase db push
 ```bash
 npm run lint
 npm run typecheck
-npm test        # vitest with 100% coverage thresholds
+npm test        # vitest with 100% coverage thresholds (shadcn ui/ excluded as vendor code)
+npm run cpd     # jscpd copy-paste detector, fails above 2.5% duplicated lines
 npm run build
 ```
 
-Lint, typecheck, and tests run on every pull request via GitHub Actions; the build runs on Vercel for each deployment.
+Lint, typecheck, tests, and the duplication check run on every pull request via GitHub Actions; the build runs on Vercel for each deployment.
 
 ## Deploy
 

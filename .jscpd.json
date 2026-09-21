@@ -1,0 +1,20 @@
+{
+  "format": [
+    "typescript",
+    "tsx"
+  ],
+  "minTokens": 30,
+  "minLines": 4,
+  "ignore": [
+    "**/node_modules/**",
+    "**/.next/**",
+    "**/src/components/ui/**"
+  ],
+  "reporters": [
+    "console",
+    "json"
+  ],
+  "output": ".jscpd-report",
+  "gitignore": true,
+  "threshold": 2.5
+}

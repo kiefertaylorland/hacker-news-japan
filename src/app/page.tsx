@@ -1,8 +1,9 @@
 import { Suspense } from "react";
 import { Dashboard } from "@/components/dashboard/Dashboard";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
+import { AUTH_ERROR_PARAM } from "@/lib/auth/constants";
 import { getCurrentUser } from "@/lib/auth/user";
-import { getBookmarkIds } from "@/lib/bookmarks";
+import { getBookmarkIds } from "@/lib/bookmarks/queries";
 
 interface HomeProps {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
@@ -15,7 +16,7 @@ export default async function Home({ searchParams }: HomeProps) {
 
   return (
     <Suspense fallback={<DashboardSkeleton />}>
-      <Dashboard user={user} savedIds={savedIds} authError={params.auth_error !== undefined} />
+      <Dashboard user={user} savedIds={savedIds} authError={params[AUTH_ERROR_PARAM] !== undefined} />
     </Suspense>
   );
 }

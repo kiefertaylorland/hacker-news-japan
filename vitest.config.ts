@@ -17,7 +17,7 @@ export default defineConfig({
     coverage: {
       provider: "istanbul",
       include: ["src/**/*.{ts,tsx}"],
-      exclude: ["src/**/*.d.ts"],
+      exclude: ["src/**/*.d.ts", "src/components/ui/**"],
       reportsDirectory: path.join(os.tmpdir(), "hacker-news-japan-coverage"),
       thresholds: {
         statements: 100,

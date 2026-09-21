@@ -28,3 +28,6 @@ next-env.d.ts
 # Supabase CLI local secrets
 .env.*.local
 supabase/.temp/
+
+# jscpd
+.jscpd-report/

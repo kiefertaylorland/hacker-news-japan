@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { AUTH_ERROR_PATH } from "@/lib/auth/constants";
 import { getRequestOrigin, sanitizeNextPath } from "@/lib/auth/origin";
 
 export async function signInWithGitHub(formData?: FormData) {
@@ -19,7 +20,7 @@ export async function signInWithGitHub(formData?: FormData) {
   });
 
   if (error || !data.url) {
-    redirect("/?auth_error=1");
+    redirect(AUTH_ERROR_PATH);
   }
 
   redirect(data.url);
