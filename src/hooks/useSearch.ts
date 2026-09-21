@@ -98,21 +98,28 @@ export function useSearch(): UseSearchReturn {
     return () => controller.abort();
   }, [query, debouncedQuery, storyType, dateRange, sortBy, page]);
 
-  // Any filter change resets to the first page; only an explicit page change keeps one.
-  const applyChange = useCallback(
-    (patch: Partial<SearchParams>) => {
-      const next = { ...params, page: 0, ...patch };
+  // Any filter change resets to the first page.
+  const applyFilterChange = useCallback(
+    (patch: Partial<Omit<SearchParams, "page">>) => {
+      const next = { ...params, ...patch, page: 0 };
       setParams(next);
       router.push(toSearchUrl(next), { scroll: true });
     },
     [params, router]
   );
 
-  const setQuery = useCallback((query: string) => applyChange({ query }), [applyChange]);
-  const setStoryType = useCallback((storyType: StoryType) => applyChange({ storyType }), [applyChange]);
-  const setDateRange = useCallback((dateRange: DateRange) => applyChange({ dateRange }), [applyChange]);
-  const setSortBy = useCallback((sortBy: SortBy) => applyChange({ sortBy }), [applyChange]);
-  const setPage = useCallback((page: number) => applyChange({ page }), [applyChange]);
+  const setQuery = useCallback((query: string) => applyFilterChange({ query }), [applyFilterChange]);
+  const setStoryType = useCallback((storyType: StoryType) => applyFilterChange({ storyType }), [applyFilterChange]);
+  const setDateRange = useCallback((dateRange: DateRange) => applyFilterChange({ dateRange }), [applyFilterChange]);
+  const setSortBy = useCallback((sortBy: SortBy) => applyFilterChange({ sortBy }), [applyFilterChange]);
+  const setPage = useCallback(
+    (page: number) => {
+      const next = { ...params, page };
+      setParams(next);
+      router.push(toSearchUrl(next), { scroll: true });
+    },
+    [params, router]
+  );
 
   return { ...params, results, isLoading, error, setQuery, setStoryType, setDateRange, setSortBy, setPage };
 }

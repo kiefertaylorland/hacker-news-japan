@@ -133,6 +133,7 @@ describe("useSearch", () => {
     act(() => {
       result.current.setPage(2);
     });
+    expect(result.current.page).toBe(2);
     expect(pushMock).toHaveBeenLastCalledWith(
       "/?query=osaka&storyType=job&dateRange=month&sortBy=comments&page=2",
       { scroll: true }
