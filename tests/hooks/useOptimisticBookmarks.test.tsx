@@ -28,4 +28,12 @@ describe("useOptimisticBookmarks", () => {
     expect(mockedToggleBookmark).toHaveBeenNthCalledWith(1, sampleStory, false);
     expect(mockedToggleBookmark).toHaveBeenNthCalledWith(2, sampleStory, true);
   });
+
+  it("keeps a stable toggle identity across rerenders", () => {
+    const savedIds: string[] = [];
+    const { result, rerender } = renderHook(() => useOptimisticBookmarks(savedIds));
+    const first = result.current.toggle;
+    rerender();
+    expect(result.current.toggle).toBe(first);
+  });
 });

@@ -7,12 +7,21 @@ import { sampleResults } from "../fixtures/stories";
 import { renderServerPage } from "../helpers/renderServerPage";
 
 vi.mock("@/components/dashboard/Dashboard", () => ({
-  Dashboard: ({ authError, initialResults }: { authError?: boolean; initialResults?: AlgoliaResponse | null }) =>
+  Dashboard: ({
+    authError,
+    initialResults,
+    savedIds,
+  }: {
+    authError?: boolean;
+    initialResults?: AlgoliaResponse | null;
+    savedIds?: string[] | Promise<string[]>;
+  }) =>
     createElement(
       "div",
       null,
       authError ? "Dashboard content (auth error)" : "Dashboard content",
-      initialResults ? ` with ${initialResults.hits.length} stories` : " without stories"
+      initialResults ? ` with ${initialResults.hits.length} stories` : " without stories",
+      savedIds instanceof Promise ? " (bookmarks streaming)" : " (no bookmarks)"
     ),
 }));
 
@@ -46,7 +55,7 @@ describe("app entry points", () => {
 
   it("renders the home page with the current user's bookmarks and cached stories", async () => {
     await renderServerPage(Home({}));
-    expect(screen.getByText("Dashboard content with 1 stories")).toBeInTheDocument();
+    expect(screen.getByText("Dashboard content with 1 stories (bookmarks streaming)")).toBeInTheDocument();
     expect(getBookmarkIds).toHaveBeenCalledWith("user-1");
     expect(getCachedStories).toHaveBeenCalledWith({
       query: "",
@@ -60,20 +69,20 @@ describe("app entry points", () => {
   it("renders the home page for anonymous visitors using the URL search params", async () => {
     vi.mocked(getCurrentUser).mockResolvedValueOnce(null);
     await renderServerPage(Home({ searchParams: Promise.resolve({ query: "tokyo", page: ["2"] }) }));
-    expect(screen.getByText("Dashboard content with 1 stories")).toBeInTheDocument();
-    expect(getBookmarkIds).toHaveBeenCalledWith(null);
+    expect(screen.getByText("Dashboard content with 1 stories (no bookmarks)")).toBeInTheDocument();
+    expect(getBookmarkIds).not.toHaveBeenCalled();
     expect(getCachedStories).toHaveBeenCalledWith(expect.objectContaining({ query: "tokyo", page: 2 }));
   });
 
   it("falls back to client fetching when the cached story fetch fails", async () => {
     vi.mocked(getCachedStories).mockRejectedValueOnce(new Error("Algolia API error: 500"));
     await renderServerPage(Home({ searchParams: Promise.resolve({}) }));
-    expect(screen.getByText("Dashboard content without stories")).toBeInTheDocument();
+    expect(screen.getByText(/^Dashboard content without stories/)).toBeInTheDocument();
   });
 
   it("passes a failed sign-in flag through to the dashboard", async () => {
     await renderServerPage(Home({ searchParams: Promise.resolve({ auth_error: "1" }) }));
-    expect(screen.getByText("Dashboard content (auth error) with 1 stories")).toBeInTheDocument();
+    expect(screen.getByText(/^Dashboard content \(auth error\) with 1 stories/)).toBeInTheDocument();
   });
 
   it("renders the loading page and the home shell fallback", () => {

@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -62,11 +62,24 @@ describe("Dashboard", () => {
     expect(screen.getByText("No stories found")).toBeInTheDocument();
   });
 
-  it("announces loading without presenting stale results as current", () => {
+  it("announces loading while keeping previous results visible", () => {
     useSearchMock.mockReturnValue(mockSearchState({ results: sampleResults, isLoading: true }));
     render(createElement(Dashboard));
     expect(screen.getByRole("status")).toHaveTextContent("Loading stories");
-    expect(screen.queryByText("Building in Japan")).not.toBeInTheDocument();
+    expect(screen.getByText("Building in Japan").closest("[aria-busy]")).toHaveAttribute("aria-busy", "true");
+  });
+
+  it("renders stories before streamed bookmarks resolve, then enables saving", async () => {
+    useSearchMock.mockReturnValue(mockSearchState({ results: sampleResults }));
+    let resolveIds: (ids: string[]) => void = () => {};
+    const savedIds = new Promise<string[]>((resolve) => { resolveIds = resolve; });
+
+    render(createElement(Dashboard, { user: authUser, savedIds }));
+    expect(screen.getByText("Building in Japan")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /bookmark|Save story/ })).not.toBeInTheDocument();
+
+    await act(async () => resolveIds(["123"]));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Remove bookmark" })).toBeInTheDocument());
   });
 
   it("shows a notice when a sign-in attempt failed", () => {

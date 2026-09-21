@@ -4,7 +4,7 @@ import { Separator } from "@/components/ui/separator";
 
 export function StoryCardSkeleton() {
   return (
-    <Card className="h-full overflow-hidden border-l-2 border-white/10 border-l-white/10 bg-white/5 shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md">
+    <Card className="h-full overflow-hidden border-l-2 border-white/10 border-l-white/10 bg-card shadow">
       <CardHeader className="space-y-0 p-4 pb-3">
         {/* Badge and domain */}
         <div className="mb-2 flex items-start justify-between gap-2">

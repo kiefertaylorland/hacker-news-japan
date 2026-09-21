@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { cn, formatRelativeTime } from "@/lib/utils";
 import { getDomain, getStoryUrl, hnItemUrl } from "@/lib/url";
 import type { HNStory } from "@/lib/types";
@@ -17,7 +18,6 @@ import { Separator } from "@/components/ui/separator";
 
 interface StoryCardProps {
   story: HNStory;
-  index?: number;
   isSaved?: boolean;
   onToggleSave?: (story: HNStory) => void;
 }
@@ -52,19 +52,17 @@ function getStoryPresentation(tags: string[]) {
   return STORY_PRESENTATION.story;
 }
 
-export function StoryCard({ story, index = 0, isSaved = false, onToggleSave }: StoryCardProps) {
+// Memoized so a loading flip on the grid does not repaint 30 cards.
+export const StoryCard = memo(function StoryCard({ story, isSaved = false, onToggleSave }: StoryCardProps) {
   const domain = getDomain(story.url);
   const storyUrl = getStoryUrl(story.url, hnItemUrl(story.objectID));
   const presentation = getStoryPresentation(story._tags);
 
   return (
-    <div
-      style={{ animationDelay: `${Math.min(index * 40, 320)}ms` }}
-      className="group block h-full min-w-0 animate-slide-up rounded-xl"
-    >
+    <div className="group block h-full min-w-0 rounded-xl">
       <Card
         className={cn(
-          "h-full overflow-hidden border-l-2 border-white/10 bg-white/5 shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.07] hover:shadow-[0_12px_48px_rgba(0,0,0,0.55)]",
+          "h-full overflow-hidden border-l-2 border-white/10 bg-card shadow transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-lg",
           presentation.accent
         )}
       >
@@ -137,4 +135,4 @@ export function StoryCard({ story, index = 0, isSaved = false, onToggleSave }: S
       </Card>
     </div>
   );
-}
+});

@@ -43,6 +43,9 @@ if (!window.HTMLElement.prototype.scrollIntoView) {
   window.HTMLElement.prototype.scrollIntoView = vi.fn();
 }
 
+// jsdom's scrollTo only logs "not implemented"; the search hook calls it on page changes.
+window.scrollTo = vi.fn();
+
 if (!window.PointerEvent) {
   Object.defineProperty(window, "PointerEvent", {
     writable: true,

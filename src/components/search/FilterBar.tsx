@@ -47,7 +47,7 @@ export function FilterBar({
         >
           <SelectTrigger
             aria-label="Date range"
-            className="h-11 sm:h-8 w-[140px] rounded-lg border-white/10 bg-white/5 text-xs font-medium text-slate-200 backdrop-blur-md focus:ring-hn/30"
+            className="h-11 sm:h-8 w-[140px] rounded-lg border-white/10 bg-white/5 text-xs font-medium text-slate-200 focus:ring-hn/30"
           >
             <SelectValue />
           </SelectTrigger>

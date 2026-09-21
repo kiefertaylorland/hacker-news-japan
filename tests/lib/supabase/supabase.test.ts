@@ -107,6 +107,16 @@ describe("proxy", () => {
     const response = await proxy(new NextRequest("http://localhost:3000/saved"));
 
     expect(response.cookies.get("sb-token")?.value).toBe("rotated");
-    expect(config.matcher[0]).toContain("_next/static");
+  });
+
+  it("skips Next internals and static files but runs on pages", () => {
+    // Next compiles the matcher with path-to-regexp; the pattern is a regex body it accepts as-is.
+    const matcher = new RegExp(`^${config.matcher[0]}$`);
+    for (const path of ["/", "/saved", "/auth/callback", "/?query=tokyo&page=1"]) {
+      expect(path).toMatch(matcher);
+    }
+    for (const path of ["/_next/static/chunks/app.js", "/_next/image?url=x", "/_next/data/build/index.json", "/favicon.ico", "/robots.txt", "/sitemap.xml", "/styles.css", "/icon.png"]) {
+      expect(path).not.toMatch(matcher);
+    }
   });
 });

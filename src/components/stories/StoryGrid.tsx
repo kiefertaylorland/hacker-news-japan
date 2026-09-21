@@ -1,7 +1,9 @@
 "use client";
 
 import { memo } from "react";
+import { HITS_PER_PAGE } from "@/lib/constants";
 import type { HNStory } from "@/lib/types";
+import { cn } from "@/lib/utils";
 import { StoryCard } from "./StoryCard";
 import { StoryCardSkeleton } from "./StoryCardSkeleton";
 import { EmptyState } from "@/components/layout/EmptyState";
@@ -24,11 +26,11 @@ export const StoryGrid = memo(function StoryGrid({
   emptyTitle = "No stories found",
   emptyDescription = "Try adjusting your filters or search.",
 }: StoryGridProps) {
-  // Show skeletons while loading
-  if (isLoading) {
+  // Show a full page of skeletons only when there is nothing to keep on screen.
+  if (isLoading && !stories?.length) {
     return (
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 9 }).map((_, i) => (
+        {Array.from({ length: HITS_PER_PAGE }).map((_, i) => (
           <StoryCardSkeleton key={i} />
         ))}
       </div>
@@ -39,7 +41,6 @@ export const StoryGrid = memo(function StoryGrid({
   if (!stories || stories.length === 0) {
     return (
       <EmptyState
-        className="animate-slide-up"
         icon={<SearchXIcon />}
         title={emptyTitle}
         description={emptyDescription}
@@ -47,14 +48,19 @@ export const StoryGrid = memo(function StoryGrid({
     );
   }
 
-  // Show stories
+  // Show stories; previous results stay visible (dimmed) while the next page loads.
   return (
-    <div className="grid animate-slide-up grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {stories.map((story, index) => (
+    <div
+      aria-busy={isLoading}
+      className={cn(
+        "grid animate-fade-in grid-cols-1 gap-4 transition-opacity md:grid-cols-2 lg:grid-cols-3",
+        isLoading && "opacity-60"
+      )}
+    >
+      {stories.map((story) => (
         <StoryCard
           key={story.objectID}
           story={story}
-          index={index}
           isSaved={savedIds?.includes(story.objectID) ?? false}
           onToggleSave={onToggleSave}
         />
