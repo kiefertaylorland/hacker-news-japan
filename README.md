@@ -67,7 +67,7 @@ npm run cpd     # jscpd copy-paste detector, fails above 2.5% duplicated lines
 npm run build
 ```
 
-Lint, typecheck, tests, and the duplication check run on every pull request via GitHub Actions; the build runs on Vercel for each deployment.
+Lint, typecheck, tests, the duplication check, and a production build (`next build`) all run on every pull request via GitHub Actions; Vercel then performs its own build for each deployment.
 
 ## Deploy
 
