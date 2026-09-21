@@ -2,26 +2,19 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { revalidatePath } from "next/cache";
 import { toggleBookmark } from "@/lib/bookmarks/actions";
 import { getCurrentUser } from "@/lib/auth/user";
-import { createClient } from "@/lib/supabase/server";
-import { authUser, sampleBookmarkRow as row, sampleStory as story } from "../../fixtures/stories";
-import { mockQueryBuilder, type QueryResult } from "../../helpers/mockSupabase";
+import { setBookmark } from "@/lib/bookmarks/queries";
+import { authUser, sampleStory as story } from "../../fixtures/stories";
 
 vi.mock("next/navigation", () => import("../../helpers/mockNext").then((m) => m.navigationMock()));
 vi.mock("next/cache", () => import("../../helpers/mockNext").then((m) => m.cacheMock()));
-vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
+vi.mock("@/lib/bookmarks/queries", () => ({ setBookmark: vi.fn() }));
 vi.mock("@/lib/auth/user", () => ({ getCurrentUser: vi.fn() }));
 
-const mockedCreateClient = vi.mocked(createClient);
+const mockedSetBookmark = vi.mocked(setBookmark);
 const mockedGetCurrentUser = vi.mocked(getCurrentUser);
 
-function mockQuery(result: QueryResult) {
-  const { from, builder } = mockQueryBuilder(result);
-  mockedCreateClient.mockResolvedValue({ from } as never);
-  return { from, builder };
-}
-
 beforeEach(() => {
-  mockedCreateClient.mockReset();
+  mockedSetBookmark.mockReset();
   mockedGetCurrentUser.mockReset();
 });
 
@@ -31,30 +24,18 @@ describe("toggleBookmark", () => {
     await expect(toggleBookmark(story, false)).rejects.toThrow("REDIRECT:/?auth_error=1");
   });
 
-  it("upserts a bookmark idempotently and revalidates both pages", async () => {
+  it.each([false, true])("writes the bookmark (isSaved=%s) and revalidates both pages", async (isSaved) => {
     mockedGetCurrentUser.mockResolvedValue(authUser);
-    const { builder } = mockQuery({ error: null });
-    await toggleBookmark(story, false);
-    expect(builder.upsert).toHaveBeenCalledWith(row, {
-      onConflict: "user_id,object_id",
-      ignoreDuplicates: true,
-    });
+    await toggleBookmark(story, isSaved);
+    expect(mockedSetBookmark).toHaveBeenCalledWith(story, "user-1", isSaved);
     expect(revalidatePath).toHaveBeenCalledWith("/");
     expect(revalidatePath).toHaveBeenCalledWith("/saved");
   });
 
-  it("deletes a saved bookmark", async () => {
+  it("propagates write failures without revalidating", async () => {
     mockedGetCurrentUser.mockResolvedValue(authUser);
-    const { builder } = mockQuery({ error: null });
-    await toggleBookmark(story, true);
-    expect(builder.delete).toHaveBeenCalled();
-    expect(builder.eq).toHaveBeenCalledWith("user_id", "user-1");
-    expect(builder.eq).toHaveBeenCalledWith("object_id", "123");
-  });
-
-  it("surfaces database errors", async () => {
-    mockedGetCurrentUser.mockResolvedValue(authUser);
-    mockQuery({ error: { message: "rls" } });
+    mockedSetBookmark.mockRejectedValue(new Error("Could not update bookmark: rls"));
     await expect(toggleBookmark(story, false)).rejects.toThrow("Could not update bookmark: rls");
+    expect(revalidatePath).not.toHaveBeenCalled();
   });
 });

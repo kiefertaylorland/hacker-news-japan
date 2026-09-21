@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getBookmarkIds, listBookmarks, toBookmarkRow, toHNStory } from "@/lib/bookmarks/queries";
+import { getBookmarkIds, listBookmarks, setBookmark, toBookmarkRow, toHNStory } from "@/lib/bookmarks/queries";
 import { createClient } from "@/lib/supabase/server";
 import { sampleBookmarkRow as row, sampleStory as story } from "../../fixtures/stories";
 import { mockQueryBuilder, type QueryResult } from "../../helpers/mockSupabase";
@@ -56,5 +56,29 @@ describe("listBookmarks", () => {
 
     mockQuery({ data: null, error: { message: "down" } });
     await expect(listBookmarks("user-1")).rejects.toThrow("Could not load bookmarks: down");
+  });
+});
+
+describe("setBookmark", () => {
+  it("upserts a bookmark idempotently", async () => {
+    const { builder } = mockQuery({ error: null });
+    await setBookmark(story, "user-1", false);
+    expect(builder.upsert).toHaveBeenCalledWith(row, {
+      onConflict: "user_id,object_id",
+      ignoreDuplicates: true,
+    });
+  });
+
+  it("deletes a saved bookmark", async () => {
+    const { builder } = mockQuery({ error: null });
+    await setBookmark(story, "user-1", true);
+    expect(builder.delete).toHaveBeenCalled();
+    expect(builder.eq).toHaveBeenCalledWith("user_id", "user-1");
+    expect(builder.eq).toHaveBeenCalledWith("object_id", "123");
+  });
+
+  it("surfaces database errors", async () => {
+    mockQuery({ error: { message: "rls" } });
+    await expect(setBookmark(story, "user-1", false)).rejects.toThrow("Could not update bookmark: rls");
   });
 });
