@@ -45,8 +45,6 @@ export function useSearch(
 
   // Results state
   const [results, setResults] = useState<AlgoliaResponse | null>(initialResults);
-  // Stryker disable next-line BooleanLiteral: every branch of the mount effect below calls
-  // setIsLoading explicitly before this default is ever observed by a flushed render.
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
