@@ -1,6 +1,6 @@
 "use client";
 
-import { useOptimistic, useTransition } from "react";
+import { useOptimistic, useRef, useTransition } from "react";
 import { toggleBookmark } from "@/lib/bookmarks/actions";
 import type { HNStory } from "@/lib/types";
 
@@ -11,6 +11,7 @@ import type { HNStory } from "@/lib/types";
  */
 export function useOptimisticBookmarks(savedIds: string[]) {
   const [, startTransition] = useTransition();
+  const pendingSavedByStory = useRef<Record<string, boolean>>({});
   const [optimisticIds, toggleId] = useOptimistic(
     savedIds,
     (current: string[], objectID: string) =>
@@ -18,10 +19,17 @@ export function useOptimisticBookmarks(savedIds: string[]) {
   );
 
   const toggle = (story: HNStory) => {
-    const isSaved = optimisticIds.includes(story.objectID);
+    const isSaved = pendingSavedByStory.current[story.objectID] ?? optimisticIds.includes(story.objectID);
+    pendingSavedByStory.current[story.objectID] = !isSaved;
     startTransition(async () => {
       toggleId(story.objectID);
-      await toggleBookmark(story, isSaved);
+      try {
+        await toggleBookmark(story, isSaved);
+      } finally {
+        if (pendingSavedByStory.current[story.objectID] === !isSaved) {
+          delete pendingSavedByStory.current[story.objectID];
+        }
+      }
     });
   };
 

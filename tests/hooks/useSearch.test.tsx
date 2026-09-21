@@ -74,6 +74,47 @@ describe("useSearch", () => {
     expect(result.current.error).toBeNull();
   });
 
+  it.each(["-1", "NaN"])("normalizes invalid page=%s URL params to the default page", async (page) => {
+    currentSearchParams = new URLSearchParams(`query=tokyo&page=${page}`);
+    mockedSearchStories.mockResolvedValue(response);
+
+    const { result } = renderHook(() => useSearch());
+
+    expect(result.current.page).toBe(0);
+    await waitFor(() =>
+      expect(mockedSearchStories).toHaveBeenCalledWith(
+        {
+          query: "tokyo",
+          storyType: "all",
+          dateRange: "all",
+          sortBy: "date_desc",
+          page: 0,
+        },
+        expect.any(AbortSignal)
+      )
+    );
+  });
+
+  it("syncs state when the URL search params change externally", async () => {
+    mockedSearchStories.mockResolvedValue(response);
+    const { result, rerender } = renderHook(() => useSearch());
+
+    await waitFor(() => expect(mockedSearchStories).toHaveBeenCalledTimes(1));
+
+    currentSearchParams = new URLSearchParams(
+      "query=tokyo&storyType=job&dateRange=week&sortBy=points&page=2"
+    );
+    rerender();
+
+    await waitFor(() => {
+      expect(result.current.query).toBe("tokyo");
+      expect(result.current.storyType).toBe("job");
+      expect(result.current.dateRange).toBe("week");
+      expect(result.current.sortBy).toBe("points");
+      expect(result.current.page).toBe(2);
+    });
+  });
+
   it.each([
     ["a non-Error rejection", "boom", "Unknown error"],
     ["an Error rejection", new Error("Request failed"), "Request failed"],
@@ -133,6 +174,7 @@ describe("useSearch", () => {
     act(() => {
       result.current.setPage(2);
     });
+    expect(result.current.page).toBe(2);
     expect(pushMock).toHaveBeenLastCalledWith(
       "/?query=osaka&storyType=job&dateRange=month&sortBy=comments&page=2",
       { scroll: true }

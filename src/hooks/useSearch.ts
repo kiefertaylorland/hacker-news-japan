@@ -25,12 +25,13 @@ interface UseSearchReturn extends SearchParams {
 }
 
 function readSearchParams(searchParams: URLSearchParams): SearchParams {
+  const page = Number.parseInt(searchParams.get("page") || "", 10);
   return {
     query: searchParams.get("query") || DEFAULT_SEARCH_PARAMS.query,
     storyType: (searchParams.get("storyType") as StoryType) || DEFAULT_SEARCH_PARAMS.storyType,
     dateRange: (searchParams.get("dateRange") as DateRange) || DEFAULT_SEARCH_PARAMS.dateRange,
     sortBy: (searchParams.get("sortBy") as SortBy) || DEFAULT_SEARCH_PARAMS.sortBy,
-    page: parseInt(searchParams.get("page") || "0", 10),
+    page: Number.isNaN(page) || page < 0 ? DEFAULT_SEARCH_PARAMS.page : page,
   };
 }
 
@@ -43,6 +44,16 @@ function toSearchUrl(params: SearchParams): string {
     page: params.page.toString(),
   });
   return `/?${query.toString()}`;
+}
+
+function sameSearchParams(left: SearchParams, right: SearchParams): boolean {
+  return (
+    left.query === right.query &&
+    left.storyType === right.storyType &&
+    left.dateRange === right.dateRange &&
+    left.sortBy === right.sortBy &&
+    left.page === right.page
+  );
 }
 
 export function useSearch(): UseSearchReturn {
@@ -59,6 +70,11 @@ export function useSearch(): UseSearchReturn {
   const [results, setResults] = useState<AlgoliaResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const next = readSearchParams(searchParams);
+    setParams((current) => (sameSearchParams(current, next) ? current : next));
+  }, [searchParams]);
 
   // Fetch results when debounced query or filters change
   useEffect(() => {
@@ -98,21 +114,28 @@ export function useSearch(): UseSearchReturn {
     return () => controller.abort();
   }, [query, debouncedQuery, storyType, dateRange, sortBy, page]);
 
-  // Any filter change resets to the first page; only an explicit page change keeps one.
-  const applyChange = useCallback(
-    (patch: Partial<SearchParams>) => {
-      const next = { ...params, page: 0, ...patch };
+  // Any filter change resets to the first page.
+  const applyFilterChange = useCallback(
+    (patch: Partial<Omit<SearchParams, "page">>) => {
+      const next = { ...params, ...patch, page: 0 };
       setParams(next);
       router.push(toSearchUrl(next), { scroll: true });
     },
     [params, router]
   );
 
-  const setQuery = useCallback((query: string) => applyChange({ query }), [applyChange]);
-  const setStoryType = useCallback((storyType: StoryType) => applyChange({ storyType }), [applyChange]);
-  const setDateRange = useCallback((dateRange: DateRange) => applyChange({ dateRange }), [applyChange]);
-  const setSortBy = useCallback((sortBy: SortBy) => applyChange({ sortBy }), [applyChange]);
-  const setPage = useCallback((page: number) => applyChange({ page }), [applyChange]);
+  const setQuery = useCallback((query: string) => applyFilterChange({ query }), [applyFilterChange]);
+  const setStoryType = useCallback((storyType: StoryType) => applyFilterChange({ storyType }), [applyFilterChange]);
+  const setDateRange = useCallback((dateRange: DateRange) => applyFilterChange({ dateRange }), [applyFilterChange]);
+  const setSortBy = useCallback((sortBy: SortBy) => applyFilterChange({ sortBy }), [applyFilterChange]);
+  const setPage = useCallback(
+    (page: number) => {
+      const next = { ...params, page };
+      setParams(next);
+      router.push(toSearchUrl(next), { scroll: true });
+    },
+    [params, router]
+  );
 
   return { ...params, results, isLoading, error, setQuery, setStoryType, setDateRange, setSortBy, setPage };
 }
