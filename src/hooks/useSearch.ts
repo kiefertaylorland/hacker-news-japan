@@ -98,7 +98,8 @@ export function useSearch(
           data = await searchStories(current, controller.signal);
         } else {
           const window = await fetchSearchWindow(current, controller.signal);
-          windowRef.current = { key: windowKey, data: window };
+          if (controller.signal.aborted) return;
+          windowRef.current = { key: windowKey, data: window }
           data = pageSearchWindow(window, page);
         }
         if (controller.signal.aborted) return;
