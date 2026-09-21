@@ -1,6 +1,7 @@
 "use client";
 
-import { cn, formatRelativeTime, getDomain } from "@/lib/utils";
+import { cn, formatRelativeTime } from "@/lib/utils";
+import { getDomain, getStoryUrl, hnItemUrl } from "@/lib/url";
 import type { HNStory } from "@/lib/types";
 import {
   BookmarkCheckIcon,
@@ -51,20 +52,9 @@ function getStoryPresentation(tags: string[]) {
   return STORY_PRESENTATION.story;
 }
 
-function getStoryUrl(url: string | null, fallbackUrl: string): string {
-  if (!url) return fallbackUrl;
-  try {
-    const parsedUrl = new URL(url);
-    return parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:" ? url : fallbackUrl;
-  } catch {
-    return fallbackUrl;
-  }
-}
-
 export function StoryCard({ story, index = 0, isSaved = false, onToggleSave }: StoryCardProps) {
   const domain = getDomain(story.url);
-  const hnUrl = `https://news.ycombinator.com/item?id=${story.objectID}`;
-  const storyUrl = getStoryUrl(story.url, hnUrl);
+  const storyUrl = getStoryUrl(story.url, hnItemUrl(story.objectID));
   const presentation = getStoryPresentation(story._tags);
 
   return (

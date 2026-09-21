@@ -5,7 +5,7 @@ import {
   SORT_BY_OPTIONS,
   STORY_TYPE_OPTIONS,
 } from "@/lib/constants";
-import { cn, formatRelativeTime, getDomain } from "@/lib/utils";
+import { cn, formatRelativeTime } from "@/lib/utils";
 
 describe("constants", () => {
   it("exposes the option lists and default search params", () => {
@@ -36,11 +36,5 @@ describe("utils", () => {
   it("formats relative times and tolerates bad input", () => {
     expect(formatRelativeTime("2020-01-01T00:00:00.000Z")).not.toBe("unknown");
     expect(formatRelativeTime("not-a-date")).toBe("unknown");
-  });
-
-  it("extracts a bare domain", () => {
-    expect(getDomain("https://www.example.com/path")).toBe("example.com");
-    expect(getDomain(null)).toBe("");
-    expect(getDomain("notaurl")).toBe("");
   });
 });

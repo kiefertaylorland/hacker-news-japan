@@ -3,7 +3,7 @@ import { createElement } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { StoryCardSkeleton } from "@/components/stories/StoryCardSkeleton";
 import { StoryGrid } from "@/components/stories/StoryGrid";
-import * as utils from "@/lib/utils";
+import * as url from "@/lib/url";
 import { makeStory, sampleStory } from "../../fixtures/stories";
 
 describe("StoryGrid", () => {
@@ -26,7 +26,7 @@ describe("StoryGrid", () => {
   });
 
   it("does not rerender unchanged stories while typing, but renders new results", () => {
-    const getDomain = vi.spyOn(utils, "getDomain");
+    const getDomain = vi.spyOn(url, "getDomain");
     const stories = [sampleStory];
     const { rerender } = render(createElement(StoryGrid, { stories, isLoading: false }));
     getDomain.mockClear();
