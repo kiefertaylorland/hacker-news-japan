@@ -35,7 +35,7 @@ interface BookmarkableGridProps {
 }
 
 function BookmarkableGrid({ user, savedIds, stories, isLoading }: BookmarkableGridProps) {
-  const bookmarks = useOptimisticBookmarks(savedIds instanceof Promise ? use(savedIds) : savedIds);
+  const bookmarks = useOptimisticBookmarks(Array.isArray(savedIds) ? savedIds : use(savedIds));
   return (
     <StoryGrid
       stories={stories}
