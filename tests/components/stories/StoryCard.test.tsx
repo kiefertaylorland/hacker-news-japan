@@ -17,10 +17,9 @@ describe("StoryCard", () => {
     expect(screen.getByText("example.com")).toBeInTheDocument();
     expect(screen.getByRole("link")).toHaveAttribute("href", "https://example.com/ask");
 
-    rerender(createElement(StoryCard, { story: showStory, index: 10 }));
+    rerender(createElement(StoryCard, { story: showStory }));
     expect(screen.getByText("Show HN")).toBeInTheDocument();
     expect(screen.getByRole("link")).toHaveAttribute("href", "https://news.ycombinator.com/item?id=234");
-    expect(screen.getByRole("link").closest(".animate-slide-up")).toHaveStyle({ animationDelay: "320ms" });
 
     rerender(createElement(StoryCard, { story: jobStory }));
     expect(screen.getByText("Job")).toBeInTheDocument();

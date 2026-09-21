@@ -41,7 +41,7 @@ export function Pagination({
             size="sm"
             onClick={() => onPageChange(currentPage - 1)}
             disabled={!canGoPrev || isLoading}
-            className="h-11 sm:h-9 gap-1 border border-white/10 bg-white/5 text-slate-300 backdrop-blur-md hover:bg-white/10 hover:text-slate-100"
+            className="h-11 sm:h-9 gap-1 border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-slate-100"
           >
             <ChevronLeftIcon className="h-4 w-4" />
             Previous
@@ -64,7 +64,7 @@ export function Pagination({
                 disabled={isLoading}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "h-8 w-8 border text-xs font-medium backdrop-blur-md",
+                  "h-8 w-8 border text-xs font-medium",
                   isActive
                     ? "border-hn/40 bg-hn/15 text-hn shadow-[0_0_10px_rgba(255,102,0,0.12)] hover:bg-hn/20 hover:text-hn"
                     : "border-white/10 bg-white/5 text-slate-400 hover:bg-white/10 hover:text-slate-200"
@@ -82,7 +82,7 @@ export function Pagination({
             size="sm"
             onClick={() => onPageChange(currentPage + 1)}
             disabled={!canGoNext || isLoading}
-            className="h-11 sm:h-9 gap-1 border border-white/10 bg-white/5 text-slate-300 backdrop-blur-md hover:bg-white/10 hover:text-slate-100"
+            className="h-11 sm:h-9 gap-1 border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-slate-100"
           >
             Next
             <ChevronRightIcon className="h-4 w-4" />

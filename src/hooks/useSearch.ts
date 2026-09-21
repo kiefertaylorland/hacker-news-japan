@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { searchStories } from "@/lib/search/api";
 import type { AlgoliaResponse, DateRange, SearchParams, SortBy, StoryType } from "@/lib/types";
 import { readSearchParams, sameSearchParams, toSearchUrl } from "@/lib/search/params";
@@ -18,17 +18,26 @@ interface UseSearchReturn extends SearchParams {
   setPage: (page: number) => void;
 }
 
+/**
+ * Search state for the dashboard. The server seeds the first render; every
+ * later change fetches Algolia directly from the browser and mirrors the params
+ * into the URL with the History API (which Next syncs to `useSearchParams`), so
+ * interactions never trigger a server round-trip.
+ */
 export function useSearch(
   initialResults: AlgoliaResponse | null = null,
   initialParams?: SearchParams
 ): UseSearchReturn {
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   const [params, setParams] = useState<SearchParams>(() => readSearchParams(searchParams));
   const { query, storyType, dateRange, sortBy, page } = params;
   // Params the server used to produce `initialResults`; matching them skips the client fetch.
   const initialParamsRef = useRef(initialParams ?? params);
+  // Latest params read from the URL, so the fetch effect need not depend on `searchParams`.
+  const urlParamsRef = useRef(params);
+  // True while the typed query has not been written to the URL yet.
+  const queryDirtyRef = useRef(false);
 
   // Debounced query for API calls
   const debouncedQuery = useDebounce(query, 300);
@@ -40,26 +49,31 @@ export function useSearch(
 
   useEffect(() => {
     const next = readSearchParams(searchParams);
+    urlParamsRef.current = next;
     setParams((current) => (sameSearchParams(current, next) ? current : next));
   }, [searchParams]);
 
   // Fetch results when debounced query or filters change
   useEffect(() => {
     // Wait for the new query rather than fetching the old query on page reset.
+    // Previous results stay on screen while the user is still typing.
     if (query !== debouncedQuery) {
       setIsLoading(true);
       setError(null);
-      setResults(null);
       return;
     }
 
     const current = { query: debouncedQuery, storyType, dateRange, sortBy, page };
+    if (queryDirtyRef.current) {
+      queryDirtyRef.current = false;
+      window.history.replaceState(null, "", toSearchUrl(current));
+    }
+
     const serverParams = initialParams ?? initialParamsRef.current;
-    const urlParams = readSearchParams(searchParams);
     if (
       initialResults &&
       (sameSearchParams(current, serverParams) ||
-        (initialParams !== undefined && sameSearchParams(urlParams, serverParams)))
+        (initialParams !== undefined && sameSearchParams(urlParamsRef.current, serverParams)))
     ) {
       setResults(initialResults);
       setIsLoading(false);
@@ -90,29 +104,35 @@ export function useSearch(
     // Fetch results with current parameters (empty query is valid—returns top stories)
     fetchResults();
     return () => controller.abort();
-  }, [query, debouncedQuery, storyType, dateRange, sortBy, page, initialResults, initialParams, searchParams]);
+  }, [query, debouncedQuery, storyType, dateRange, sortBy, page, initialResults, initialParams]);
+
+  // Discrete changes (filters, page) get a history entry; typing is mirrored once it settles.
+  const navigate = useCallback((next: SearchParams) => {
+    queryDirtyRef.current = false;
+    setParams(next);
+    window.history.pushState(null, "", toSearchUrl(next));
+  }, []);
+
+  const setQuery = useCallback((query: string) => {
+    queryDirtyRef.current = true;
+    setParams((current) => ({ ...current, query, page: 0 }));
+  }, []);
 
   // Any filter change resets to the first page.
   const applyFilterChange = useCallback(
-    (patch: Partial<Omit<SearchParams, "page">>) => {
-      const next = { ...params, ...patch, page: 0 };
-      setParams(next);
-      router.push(toSearchUrl(next), { scroll: true });
-    },
-    [params, router]
+    (patch: Partial<Omit<SearchParams, "query" | "page">>) => navigate({ ...params, ...patch, page: 0 }),
+    [navigate, params]
   );
 
-  const setQuery = useCallback((query: string) => applyFilterChange({ query }), [applyFilterChange]);
   const setStoryType = useCallback((storyType: StoryType) => applyFilterChange({ storyType }), [applyFilterChange]);
   const setDateRange = useCallback((dateRange: DateRange) => applyFilterChange({ dateRange }), [applyFilterChange]);
   const setSortBy = useCallback((sortBy: SortBy) => applyFilterChange({ sortBy }), [applyFilterChange]);
   const setPage = useCallback(
     (page: number) => {
-      const next = { ...params, page };
-      setParams(next);
-      router.push(toSearchUrl(next), { scroll: true });
+      navigate({ ...params, page });
+      window.scrollTo({ top: 0 });
     },
-    [params, router]
+    [navigate, params]
   );
 
   return { ...params, results, isLoading, error, setQuery, setStoryType, setDateRange, setSortBy, setPage };

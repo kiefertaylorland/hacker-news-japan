@@ -1,6 +1,6 @@
 "use client";
 
-import { useOptimistic, useRef, useTransition } from "react";
+import { useCallback, useOptimistic, useRef, useTransition } from "react";
 import { toggleBookmark } from "@/lib/bookmarks/actions";
 import type { HNStory } from "@/lib/types";
 
@@ -18,20 +18,24 @@ export function useOptimisticBookmarks(savedIds: string[]) {
       current.includes(objectID) ? current.filter((id) => id !== objectID) : [...current, objectID]
   );
 
-  const toggle = (story: HNStory) => {
-    const isSaved = pendingSavedByStory.current[story.objectID] ?? optimisticIds.includes(story.objectID);
-    pendingSavedByStory.current[story.objectID] = !isSaved;
-    startTransition(async () => {
-      toggleId(story.objectID);
-      try {
-        await toggleBookmark(story, isSaved);
-      } finally {
-        if (pendingSavedByStory.current[story.objectID] === !isSaved) {
-          delete pendingSavedByStory.current[story.objectID];
+  // Stable identity so memoized story cards do not rerender on unrelated state changes.
+  const toggle = useCallback(
+    (story: HNStory) => {
+      const isSaved = pendingSavedByStory.current[story.objectID] ?? optimisticIds.includes(story.objectID);
+      pendingSavedByStory.current[story.objectID] = !isSaved;
+      startTransition(async () => {
+        toggleId(story.objectID);
+        try {
+          await toggleBookmark(story, isSaved);
+        } finally {
+          if (pendingSavedByStory.current[story.objectID] === !isSaved) {
+            delete pendingSavedByStory.current[story.objectID];
+          }
         }
-      }
-    });
-  };
+      });
+    },
+    [optimisticIds, startTransition, toggleId]
+  );
 
   return { savedIds: optimisticIds, toggle };
 }

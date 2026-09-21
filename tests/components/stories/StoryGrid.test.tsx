@@ -3,13 +3,24 @@ import { createElement } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { StoryCardSkeleton } from "@/components/stories/StoryCardSkeleton";
 import { StoryGrid } from "@/components/stories/StoryGrid";
+import { HITS_PER_PAGE } from "@/lib/constants";
 import * as url from "@/lib/url";
 import { makeStory, sampleStory } from "../../fixtures/stories";
 
 describe("StoryGrid", () => {
-  it("renders nine skeleton cards while loading", () => {
-    const { container } = render(createElement(StoryGrid, { stories: null, isLoading: true }));
-    expect(container.querySelectorAll(".rounded-xl")).toHaveLength(9);
+  it.each([
+    ["no", null],
+    ["empty", []],
+  ])("renders a full page of skeleton cards while loading with %s previous stories", (_label, stories) => {
+    const { container } = render(createElement(StoryGrid, { stories, isLoading: true }));
+    expect(container.querySelectorAll(".rounded-xl")).toHaveLength(HITS_PER_PAGE);
+  });
+
+  it("keeps previous stories visible and marks the grid busy while loading", () => {
+    render(createElement(StoryGrid, { stories: [sampleStory], isLoading: true }));
+    const grid = screen.getByText("Building in Japan").closest("[aria-busy]");
+    expect(grid).toHaveAttribute("aria-busy", "true");
+    expect(grid).toHaveClass("opacity-60");
   });
 
   it.each([
@@ -32,6 +43,10 @@ describe("StoryGrid", () => {
     getDomain.mockClear();
 
     rerender(createElement(StoryGrid, { stories, isLoading: false }));
+    expect(getDomain).not.toHaveBeenCalled();
+
+    // A loading flip rerenders the grid but memoized cards stay put.
+    rerender(createElement(StoryGrid, { stories, isLoading: true }));
     expect(getDomain).not.toHaveBeenCalled();
 
     rerender(createElement(StoryGrid, { stories: [makeStory({ title: "Updated story" })], isLoading: false }));

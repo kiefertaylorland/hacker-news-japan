@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 
 export interface AuthUser {
@@ -14,7 +15,8 @@ interface UserMetadataClaims {
   avatar_url?: string;
 }
 
-export async function getCurrentUser(): Promise<AuthUser | null> {
+/** Memoized per request: the proxy already verified the session, so verify the claims once here. */
+export const getCurrentUser = cache(async (): Promise<AuthUser | null> => {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
   const claims = data?.claims;
@@ -34,4 +36,4 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     name,
     avatarUrl: metadata.avatar_url ?? null,
   };
-}
+});

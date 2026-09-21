@@ -1,8 +1,10 @@
+import { cache } from "react";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { getSupabaseEnv } from "./env";
 
-export async function createClient() {
+/** Memoized per request so the page, its data loaders and server actions share one client. */
+export const createClient = cache(async () => {
   const cookieStore = await cookies();
   const { url, publishableKey } = getSupabaseEnv();
 
@@ -23,4 +25,4 @@ export async function createClient() {
       },
     },
   });
-}
+});

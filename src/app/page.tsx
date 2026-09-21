@@ -27,7 +27,8 @@ async function HomeContent({ searchParams }: HomeProps) {
     getCurrentUser(),
     getCachedStories(search).catch(() => null),
   ]);
-  const savedIds = await getBookmarkIds(user?.id ?? null);
+  // Not awaited: the grid renders as soon as stories are ready and bookmarks stream in after.
+  const savedIds = user ? getBookmarkIds(user.id) : [];
 
   return (
     <Dashboard

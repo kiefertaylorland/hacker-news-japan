@@ -6,12 +6,10 @@ import type { AlgoliaResponse, SearchParams } from "@/lib/types";
 import { makeResults } from "../fixtures/stories";
 
 let currentSearchParams = new URLSearchParams();
-const pushMock = vi.fn();
+let pushState: ReturnType<typeof vi.spyOn>;
+let replaceState: ReturnType<typeof vi.spyOn>;
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({
-    push: pushMock,
-  }),
   useSearchParams: () => currentSearchParams,
 }));
 
@@ -41,7 +39,8 @@ async function renderSearch() {
 describe("useSearch", () => {
   beforeEach(() => {
     currentSearchParams = new URLSearchParams();
-    pushMock.mockReset();
+    pushState = vi.spyOn(window.history, "pushState").mockImplementation(() => {});
+    replaceState = vi.spyOn(window.history, "replaceState").mockImplementation(() => {});
     mockedSearchStories.mockReset();
   });
 
@@ -138,47 +137,69 @@ describe("useSearch", () => {
 
     await waitFor(() => expect(mockedSearchStories).toHaveBeenCalledTimes(1));
 
+    // Typing only updates state; the URL catches up once the query settles.
     act(() => {
       result.current.setQuery("osaka");
     });
     expect(result.current.page).toBe(0);
-    expect(pushMock).toHaveBeenLastCalledWith(
-      "/?query=osaka&storyType=story&dateRange=all&sortBy=date_desc&page=0",
-      { scroll: true }
-    );
+    expect(pushState).not.toHaveBeenCalled();
 
     act(() => {
       result.current.setStoryType("job");
     });
-    expect(pushMock).toHaveBeenLastCalledWith(
-      "/?query=osaka&storyType=job&dateRange=all&sortBy=date_desc&page=0",
-      { scroll: true }
+    expect(pushState).toHaveBeenLastCalledWith(
+      null,
+      "",
+      "/?query=osaka&storyType=job&dateRange=all&sortBy=date_desc&page=0"
     );
 
     act(() => {
       result.current.setDateRange("month");
     });
-    expect(pushMock).toHaveBeenLastCalledWith(
-      "/?query=osaka&storyType=job&dateRange=month&sortBy=date_desc&page=0",
-      { scroll: true }
+    expect(pushState).toHaveBeenLastCalledWith(
+      null,
+      "",
+      "/?query=osaka&storyType=job&dateRange=month&sortBy=date_desc&page=0"
     );
 
     act(() => {
       result.current.setSortBy("comments");
     });
-    expect(pushMock).toHaveBeenLastCalledWith(
-      "/?query=osaka&storyType=job&dateRange=month&sortBy=comments&page=0",
-      { scroll: true }
+    expect(pushState).toHaveBeenLastCalledWith(
+      null,
+      "",
+      "/?query=osaka&storyType=job&dateRange=month&sortBy=comments&page=0"
     );
+    expect(window.scrollTo).not.toHaveBeenCalled();
 
     act(() => {
       result.current.setPage(2);
     });
     expect(result.current.page).toBe(2);
-    expect(pushMock).toHaveBeenLastCalledWith(
-      "/?query=osaka&storyType=job&dateRange=month&sortBy=comments&page=2",
-      { scroll: true }
+    expect(pushState).toHaveBeenLastCalledWith(
+      null,
+      "",
+      "/?query=osaka&storyType=job&dateRange=month&sortBy=comments&page=2"
     );
+    expect(window.scrollTo).toHaveBeenCalledWith({ top: 0 });
+  });
+
+  it("does not refetch when the URL catches up with the state it produced", async () => {
+    mockedSearchStories.mockResolvedValue(response);
+    const { result, rerender } = renderHook(() => useSearch());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    await act(async () => result.current.setStoryType("job"));
+    const signal = mockedSearchStories.mock.lastCall![1]!;
+    expect(mockedSearchStories).toHaveBeenCalledTimes(2);
+
+    // Next dispatches a new searchParams object after our own pushState.
+    currentSearchParams = new URLSearchParams(pushState.mock.lastCall![2] as string);
+    rerender();
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    expect(signal.aborted).toBe(false);
+    expect(mockedSearchStories).toHaveBeenCalledTimes(2);
   });
 
   it("aborts requests when each filter or page changes", async () => {
@@ -303,9 +324,11 @@ describe("useSearch", () => {
     act(() => result.current.setStoryType("job"));
     await act(async () => vi.advanceTimersByTime(299));
     expect(mockedSearchStories).toHaveBeenCalledTimes(1);
-    expect(pushMock).toHaveBeenLastCalledWith(
-      "/?query=osaka&storyType=job&dateRange=all&sortBy=date_desc&page=0",
-      { scroll: true }
+    expect(pushState).toHaveBeenCalledTimes(1);
+    expect(pushState).toHaveBeenLastCalledWith(
+      null,
+      "",
+      "/?query=osaka&storyType=job&dateRange=all&sortBy=date_desc&page=0"
     );
 
     await act(async () => vi.advanceTimersByTime(1));
@@ -316,6 +339,8 @@ describe("useSearch", () => {
     );
     expect(result.current.results).toBe(response);
     expect(result.current.isLoading).toBe(false);
+    // The filter click already wrote the typed query to the URL.
+    expect(replaceState).not.toHaveBeenCalled();
   });
 
   it("aborts query changes on page zero and cancels a pending debounce on unmount", async () => {
@@ -331,6 +356,7 @@ describe("useSearch", () => {
     await act(async () => old.resolve(response));
     expect(result.current.results).toBeNull();
     expect(result.current.isLoading).toBe(true);
+    expect(replaceState).not.toHaveBeenCalled();
 
     await act(async () => vi.advanceTimersByTime(299));
     expect(mockedSearchStories).toHaveBeenCalledTimes(1);
@@ -339,7 +365,7 @@ describe("useSearch", () => {
     expect(mockedSearchStories).toHaveBeenCalledTimes(1);
   });
 
-  it("clears results and shows loading while a new query is debouncing", async () => {
+  it("keeps previous results visible while a new query is debouncing, then syncs the URL once", async () => {
     vi.useRealTimers();
     mockedSearchStories.mockResolvedValue(response);
     const { result } = renderHook(() => useSearch());
@@ -347,17 +373,28 @@ describe("useSearch", () => {
     await waitFor(() => expect(result.current.results).toEqual(response));
 
     vi.useFakeTimers();
+    act(() => result.current.setQuery("os"));
+    act(() => result.current.setQuery("osa"));
     act(() => result.current.setQuery("osaka"));
 
-    expect(result.current.results).toBeNull();
+    expect(result.current.results).toBe(response);
     expect(result.current.error).toBeNull();
     expect(result.current.isLoading).toBe(true);
     expect(mockedSearchStories).toHaveBeenCalledTimes(1);
+    expect(pushState).not.toHaveBeenCalled();
+    expect(replaceState).not.toHaveBeenCalled();
 
     await act(async () => vi.advanceTimersByTime(300));
+    expect(mockedSearchStories).toHaveBeenCalledTimes(2);
     expect(mockedSearchStories).toHaveBeenLastCalledWith(
       { query: "osaka", storyType: "all", dateRange: "all", sortBy: "date_desc", page: 0 },
       expect.any(AbortSignal)
+    );
+    expect(replaceState).toHaveBeenCalledTimes(1);
+    expect(replaceState).toHaveBeenCalledWith(
+      null,
+      "",
+      "/?query=osaka&storyType=all&dateRange=all&sortBy=date_desc&page=0"
     );
   });
   describe("with server-provided initial results", () => {
