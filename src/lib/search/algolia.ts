@@ -1,5 +1,5 @@
-import type { AlgoliaResponse, DateRange, HNStory, SortBy, StoryType } from "./types";
-import { HITS_PER_PAGE } from "./constants";
+import type { AlgoliaResponse, DateRange, HNStory, SortBy, StoryType } from "../types";
+import { HITS_PER_PAGE } from "../constants";
 
 const ALGOLIA_API_BASE = "https://hn.algolia.com/api/v1";
 

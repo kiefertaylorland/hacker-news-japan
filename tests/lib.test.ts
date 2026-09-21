@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import * as algolia from "@/lib/algolia";
-import { searchStories } from "@/lib/api";
+import * as algolia from "@/lib/search/algolia";
+import { searchStories } from "@/lib/search/api";
 import {
   DATE_RANGE_OPTIONS,
   DEFAULT_SEARCH_PARAMS,
@@ -12,7 +12,7 @@ import {
   fetchFromAlgolia,
   getUnixTimestamp,
   sortHitsByStrategy,
-} from "@/lib/algolia";
+} from "@/lib/search/algolia";
 import { cn, formatRelativeTime, getDomain } from "@/lib/utils";
 import type { AlgoliaResponse, HNStory, SortBy } from "@/lib/types";
 

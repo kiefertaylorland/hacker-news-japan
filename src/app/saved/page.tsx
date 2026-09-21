@@ -10,7 +10,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { getCurrentUser } from "@/lib/auth/user";
-import { listBookmarks } from "@/lib/bookmarks";
+import { listBookmarks } from "@/lib/bookmarks/queries";
 
 export const metadata = {
   title: "Saved stories · Hacker News Japan",

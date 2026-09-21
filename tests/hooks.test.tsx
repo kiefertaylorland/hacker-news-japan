@@ -2,7 +2,7 @@ import { renderHook, act, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useSearch } from "@/hooks/useSearch";
-import { searchStories } from "@/lib/api";
+import { searchStories } from "@/lib/search/api";
 import type { AlgoliaResponse } from "@/lib/types";
 
 let currentSearchParams = new URLSearchParams();
@@ -15,7 +15,7 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => currentSearchParams,
 }));
 
-vi.mock("@/lib/api", () => ({
+vi.mock("@/lib/search/api", () => ({
   searchStories: vi.fn(),
 }));
 

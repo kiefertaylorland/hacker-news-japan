@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { searchStories } from "@/lib/api";
+import { searchStories } from "@/lib/search/api";
 import type {
   AlgoliaResponse,
   DateRange,

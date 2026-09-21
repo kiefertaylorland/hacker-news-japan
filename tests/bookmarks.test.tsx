@@ -11,8 +11,8 @@ import {
   toBookmarkRow,
   toHNStory,
   type BookmarkRow,
-} from "@/lib/bookmarks";
-import { toggleBookmark } from "@/app/saved/actions";
+} from "@/lib/bookmarks/queries";
+import { toggleBookmark } from "@/lib/bookmarks/actions";
 import SavedPage, { metadata } from "@/app/saved/page";
 import { SavedStories } from "@/components/saved/SavedStories";
 import type { HNStory } from "@/lib/types";

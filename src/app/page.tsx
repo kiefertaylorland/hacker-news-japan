@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { Dashboard } from "@/components/dashboard/Dashboard";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
 import { getCurrentUser } from "@/lib/auth/user";
-import { getBookmarkIds } from "@/lib/bookmarks";
+import { getBookmarkIds } from "@/lib/bookmarks/queries";
 
 interface HomeProps {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;

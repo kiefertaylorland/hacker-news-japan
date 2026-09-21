@@ -1,6 +1,6 @@
 "use client";
 
-import { StoryGrid } from "./StoryGrid";
+import { StoryGrid } from "@/components/stories/StoryGrid";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function DashboardSkeleton() {

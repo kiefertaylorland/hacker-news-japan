@@ -3,7 +3,7 @@ import {
   fetchFromAlgolia,
   sortHitsByStrategy,
 } from "./algolia";
-import type { AlgoliaResponse, SearchParams } from "./types";
+import type { AlgoliaResponse, SearchParams } from "../types";
 
 export async function searchStories(
   options: SearchParams,

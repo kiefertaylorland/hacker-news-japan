@@ -16,7 +16,7 @@ vi.mock("@/lib/auth/user", () => ({
   getCurrentUser: vi.fn(async () => ({ id: "user-1", name: "octocat", avatarUrl: null })),
 }));
 
-vi.mock("@/lib/bookmarks", () => ({
+vi.mock("@/lib/bookmarks/queries", () => ({
   getBookmarkIds: vi.fn(async () => ["1"]),
 }));
 
@@ -24,7 +24,7 @@ import Loading from "@/app/loading";
 import RootLayout, { metadata } from "@/app/layout";
 import Home from "@/app/page";
 import { getCurrentUser } from "@/lib/auth/user";
-import { getBookmarkIds } from "@/lib/bookmarks";
+import { getBookmarkIds } from "@/lib/bookmarks/queries";
 
 describe("app entry points", () => {
   it("renders the home page with the current user's bookmarks", async () => {

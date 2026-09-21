@@ -2,9 +2,9 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createElement } from "react";
 import { describe, expect, it, vi } from "vitest";
-import { FilterBar } from "@/components/dashboard/FilterBar";
-import { Pagination } from "@/components/dashboard/Pagination";
-import { SortControls } from "@/components/dashboard/SortControls";
+import { FilterBar } from "@/components/search/FilterBar";
+import { Pagination } from "@/components/search/Pagination";
+import { SortControls } from "@/components/search/SortControls";
 import { SORT_BY_OPTIONS, STORY_TYPE_OPTIONS } from "@/lib/constants";
 import type { AlgoliaResponse } from "@/lib/types";
 

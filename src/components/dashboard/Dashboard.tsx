@@ -2,16 +2,16 @@
 
 import { useOptimistic, useTransition } from "react";
 import { useSearch } from "@/hooks/useSearch";
-import { toggleBookmark } from "@/app/saved/actions";
+import { toggleBookmark } from "@/lib/bookmarks/actions";
 import { UserMenu } from "@/components/auth/UserMenu";
 import type { AuthUser } from "@/lib/auth/user";
 import type { HNStory } from "@/lib/types";
-import { SearchBar } from "./SearchBar";
-import { FilterBar } from "./FilterBar";
-import { SortControls } from "./SortControls";
-import { ResultsHeader } from "./ResultsHeader";
-import { StoryGrid } from "./StoryGrid";
-import { Pagination } from "./Pagination";
+import { SearchBar } from "@/components/search/SearchBar";
+import { FilterBar } from "@/components/search/FilterBar";
+import { SortControls } from "@/components/search/SortControls";
+import { ResultsHeader } from "@/components/search/ResultsHeader";
+import { StoryGrid } from "@/components/stories/StoryGrid";
+import { Pagination } from "@/components/search/Pagination";
 
 interface DashboardProps {
   user?: AuthUser | null;

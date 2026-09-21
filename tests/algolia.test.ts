@@ -4,7 +4,7 @@ import {
   fetchFromAlgolia,
   getUnixTimestamp,
   sortHitsByStrategy,
-} from "@/lib/algolia";
+} from "@/lib/search/algolia";
 import { HITS_PER_PAGE } from "@/lib/constants";
 import type { HNStory } from "@/lib/types";
 

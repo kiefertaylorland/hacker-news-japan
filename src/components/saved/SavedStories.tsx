@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useOptimistic, useTransition } from "react";
 import { ArrowLeftIcon } from "lucide-react";
-import { StoryGrid } from "@/components/dashboard/StoryGrid";
+import { StoryGrid } from "@/components/stories/StoryGrid";
 import { UserMenu } from "@/components/auth/UserMenu";
-import { toggleBookmark } from "@/app/saved/actions";
+import { toggleBookmark } from "@/lib/bookmarks/actions";
 import type { AuthUser } from "@/lib/auth/user";
 import type { HNStory } from "@/lib/types";
 

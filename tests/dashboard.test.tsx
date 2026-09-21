@@ -4,14 +4,14 @@ import { createElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Dashboard } from "@/components/dashboard/Dashboard";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
-import { FilterBar } from "@/components/dashboard/FilterBar";
-import { Pagination } from "@/components/dashboard/Pagination";
-import { ResultsHeader } from "@/components/dashboard/ResultsHeader";
-import { SearchBar } from "@/components/dashboard/SearchBar";
-import { SortControls } from "@/components/dashboard/SortControls";
-import { StoryCard } from "@/components/dashboard/StoryCard";
-import { StoryCardSkeleton } from "@/components/dashboard/StoryCardSkeleton";
-import { StoryGrid } from "@/components/dashboard/StoryGrid";
+import { FilterBar } from "@/components/search/FilterBar";
+import { Pagination } from "@/components/search/Pagination";
+import { ResultsHeader } from "@/components/search/ResultsHeader";
+import { SearchBar } from "@/components/search/SearchBar";
+import { SortControls } from "@/components/search/SortControls";
+import { StoryCard } from "@/components/stories/StoryCard";
+import { StoryCardSkeleton } from "@/components/stories/StoryCardSkeleton";
+import { StoryGrid } from "@/components/stories/StoryGrid";
 import type { AlgoliaResponse, HNStory } from "@/lib/types";
 import * as utils from "@/lib/utils";
 
@@ -23,7 +23,7 @@ vi.mock("@/hooks/useSearch", () => ({
 
 const toggleBookmarkMock = vi.fn(async (_story: HNStory, _isSaved: boolean) => {});
 
-vi.mock("@/app/saved/actions", () => ({
+vi.mock("@/lib/bookmarks/actions", () => ({
   toggleBookmark: (story: HNStory, isSaved: boolean) => toggleBookmarkMock(story, isSaved),
 }));
 

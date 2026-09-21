@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/user";
-import { toBookmarkRow } from "@/lib/bookmarks";
+import { toBookmarkRow } from "@/lib/bookmarks/queries";
 import { createClient } from "@/lib/supabase/server";
 import type { HNStory } from "@/lib/types";
 
