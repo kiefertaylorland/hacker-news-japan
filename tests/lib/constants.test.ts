@@ -2,33 +2,41 @@ import { describe, expect, it } from "vitest";
 import { DATE_RANGE_OPTIONS, SORT_BY_OPTIONS, STORY_TYPE_OPTIONS } from "@/lib/constants";
 
 describe("constants", () => {
-  it("defines every story type option", () => {
-    expect(STORY_TYPE_OPTIONS).toEqual([
-      { label: "All Stories", value: "all" },
-      { label: "Stories", value: "story" },
-      { label: "Ask HN", value: "ask_hn" },
-      { label: "Show HN", value: "show_hn" },
-      { label: "Jobs", value: "job" },
-    ]);
-  });
-
-  it("defines every date range option", () => {
-    expect(DATE_RANGE_OPTIONS).toEqual([
-      { label: "Past 24h", value: "24h" },
-      { label: "Past Week", value: "week" },
-      { label: "Past Month", value: "month" },
-      { label: "Past Year", value: "year" },
-      { label: "All Time", value: "all" },
-    ]);
-  });
-
-  it("defines every sort option", () => {
-    expect(SORT_BY_OPTIONS).toEqual([
-      { label: "Relevance", value: "relevance" },
-      { label: "Newest", value: "date_desc" },
-      { label: "Oldest", value: "date_asc" },
-      { label: "Points", value: "points" },
-      { label: "Comments", value: "comments" },
-    ]);
+  it.each([
+    {
+      group: "story type",
+      options: STORY_TYPE_OPTIONS,
+      expected: [
+        ["All Stories", "all"],
+        ["Stories", "story"],
+        ["Ask HN", "ask_hn"],
+        ["Show HN", "show_hn"],
+        ["Jobs", "job"],
+      ],
+    },
+    {
+      group: "date range",
+      options: DATE_RANGE_OPTIONS,
+      expected: [
+        ["Past 24h", "24h"],
+        ["Past Week", "week"],
+        ["Past Month", "month"],
+        ["Past Year", "year"],
+        ["All Time", "all"],
+      ],
+    },
+    {
+      group: "sort",
+      options: SORT_BY_OPTIONS,
+      expected: [
+        ["Relevance", "relevance"],
+        ["Newest", "date_desc"],
+        ["Oldest", "date_asc"],
+        ["Points", "points"],
+        ["Comments", "comments"],
+      ],
+    },
+  ])("defines every $group option", ({ options, expected }) => {
+    expect(options).toEqual(expected.map(([label, value]) => ({ label, value })));
   });
 });

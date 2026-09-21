@@ -18,6 +18,17 @@ function deferred() {
   return { promise, resolve };
 }
 
+function renderBookmarks(savedIds: string[] = []) {
+  const hook = renderHook(
+    ({ savedIds }: { savedIds: string[] }) => useOptimisticBookmarks(savedIds),
+    { initialProps: { savedIds } }
+  );
+  return {
+    ...hook,
+    toggle: (story = sampleStory) => act(() => hook.result.current.toggle(story)),
+  };
+}
+
 describe("useOptimisticBookmarks", () => {
   beforeEach(() => {
     mockedToggleBookmark.mockReset();
@@ -45,41 +56,26 @@ describe("useOptimisticBookmarks", () => {
     expect(result.current.toggle).toBe(first);
   });
 
-  it("removes only the toggled id when unsaving, keeping other saved ids", async () => {
-    const { result } = renderHook(() => useOptimisticBookmarks(["other", sampleStory.objectID]));
-
-    act(() => {
-      result.current.toggle(sampleStory);
-    });
-
-    await waitFor(() => expect(result.current.savedIds).toEqual(["other"]));
-  });
-
-  it("adds the toggled id when saving", async () => {
-    const { result } = renderHook(() => useOptimisticBookmarks([]));
-
-    act(() => {
-      result.current.toggle(sampleStory);
-    });
-
-    await waitFor(() => expect(result.current.savedIds).toEqual([sampleStory.objectID]));
+  it.each<[string, string[], string[]]>([
+    ["removes only the toggled id when unsaving, keeping other saved ids", ["other", sampleStory.objectID], ["other"]],
+    ["adds the toggled id when saving", [], [sampleStory.objectID]],
+  ])("%s", async (_label, savedIds, expected) => {
+    const { result, toggle } = renderBookmarks(savedIds);
+    toggle();
+    await waitFor(() => expect(result.current.savedIds).toEqual(expected));
   });
 
   it("clears the pending flag after settling so a later toggle uses the settled state", async () => {
-    const { result } = renderHook(() => useOptimisticBookmarks([]));
+    const { result, toggle } = renderBookmarks();
 
-    act(() => {
-      result.current.toggle(sampleStory);
-    });
+    toggle();
     await waitFor(() => expect(mockedToggleBookmark).toHaveBeenCalledTimes(1));
     expect(mockedToggleBookmark).toHaveBeenNthCalledWith(1, sampleStory, false);
 
     // With no parent update to `savedIds`, the settled optimistic state reverts to [].
     await waitFor(() => expect(result.current.savedIds).toEqual([]));
 
-    act(() => {
-      result.current.toggle(sampleStory);
-    });
+    toggle();
     await waitFor(() => expect(mockedToggleBookmark).toHaveBeenCalledTimes(2));
     // If the pending flag were never cleared, this would incorrectly read as already-saved.
     expect(mockedToggleBookmark).toHaveBeenNthCalledWith(2, sampleStory, false);
@@ -90,17 +86,10 @@ describe("useOptimisticBookmarks", () => {
     const second = deferred();
     mockedToggleBookmark.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise).mockResolvedValue(undefined);
 
-    const { result, rerender } = renderHook(
-      ({ savedIds }: { savedIds: string[] }) => useOptimisticBookmarks(savedIds),
-      { initialProps: { savedIds: [] as string[] } }
-    );
+    const { toggle, rerender } = renderBookmarks();
 
-    act(() => {
-      result.current.toggle(sampleStory); // save intent, isSaved arg = false
-    });
-    act(() => {
-      result.current.toggle(sampleStory); // unsave intent, isSaved arg = true
-    });
+    toggle(); // save intent, isSaved arg = false
+    toggle(); // unsave intent, isSaved arg = true
     expect(mockedToggleBookmark).toHaveBeenNthCalledWith(1, sampleStory, false);
     expect(mockedToggleBookmark).toHaveBeenNthCalledWith(2, sampleStory, true);
 
@@ -112,9 +101,7 @@ describe("useOptimisticBookmarks", () => {
     // resets the optimistic baseline out from under the still-pending second toggle.
     rerender({ savedIds: [sampleStory.objectID] });
 
-    act(() => {
-      result.current.toggle(sampleStory);
-    });
+    toggle();
     await waitFor(() => expect(mockedToggleBookmark).toHaveBeenCalledTimes(3));
     // A correctly-preserved pending flag means this toggle still sees the second toggle's
     // "now unsaved" intent, not the revalidated (and now stale) optimistic baseline.
@@ -126,16 +113,11 @@ describe("useOptimisticBookmarks", () => {
   it("uses the latest optimistic ids for a fresh toggle after savedIds changes", async () => {
     const nowSaved = "999";
     const story = makeStory({ objectID: nowSaved });
-    const { result, rerender } = renderHook(
-      ({ savedIds }: { savedIds: string[] }) => useOptimisticBookmarks(savedIds),
-      { initialProps: { savedIds: [] as string[] } }
-    );
+    const { toggle, rerender } = renderBookmarks();
 
     rerender({ savedIds: [nowSaved] });
 
-    act(() => {
-      result.current.toggle(story);
-    });
+    toggle(story);
 
     await waitFor(() => expect(mockedToggleBookmark).toHaveBeenCalledTimes(1));
     expect(mockedToggleBookmark).toHaveBeenCalledWith(story, true);

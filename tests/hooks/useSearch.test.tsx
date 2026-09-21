@@ -314,14 +314,20 @@ describe("useSearch", () => {
     expect(result.current.isLoading).toBe(false);
   });
 
-  it.each(["success", "failure"] as const)(
-    "aborts on unmount and ignores a subsequent %s",
-    async (outcome) => {
+  it.each([
+    { mode: "server sort", params: "", fetch: mockedSearchStories, outcome: "success" },
+    { mode: "server sort", params: "", fetch: mockedSearchStories, outcome: "failure" },
+    { mode: "client sort", params: "sortBy=comments", fetch: mockedFetchSearchWindow, outcome: "success" },
+    { mode: "client sort", params: "sortBy=comments", fetch: mockedFetchSearchWindow, outcome: "failure" },
+  ] as const)(
+    "aborts on unmount for $mode and ignores a subsequent $outcome",
+    async ({ params, fetch, outcome }) => {
+      currentSearchParams = new URLSearchParams(params);
       const pending = deferredResponse();
-      mockedSearchStories.mockReturnValue(pending.promise);
+      fetch.mockReturnValue(pending.promise);
       const render = vi.fn(() => useSearch());
       const { unmount } = renderHook(render);
-      const signal = mockedSearchStories.mock.lastCall![1]!;
+      const signal = fetch.mock.lastCall![1]!;
       expect(signal.aborted).toBe(false);
       unmount();
       expect(signal.aborted).toBe(true);
@@ -332,30 +338,7 @@ describe("useSearch", () => {
         else pending.reject(new Error("unmounted error"));
       });
       expect(render).toHaveBeenCalledTimes(renderCount);
-      expect(mockedSearchStories).toHaveBeenCalledTimes(1);
-    }
-  );
-
-  it.each(["success", "failure"] as const)(
-    "aborts on unmount before a pending client-sort window resolves (%s)",
-    async (outcome) => {
-      currentSearchParams = new URLSearchParams("sortBy=comments");
-      const pending = deferredResponse();
-      mockedFetchSearchWindow.mockReturnValue(pending.promise);
-      const render = vi.fn(() => useSearch());
-      const { unmount } = renderHook(render);
-      const signal = mockedFetchSearchWindow.mock.lastCall![1]!;
-      expect(signal.aborted).toBe(false);
-      unmount();
-      expect(signal.aborted).toBe(true);
-      const renderCount = render.mock.calls.length;
-
-      await act(async () => {
-        if (outcome === "success") pending.resolve(response);
-        else pending.reject(new Error("unmounted error"));
-      });
-      expect(render).toHaveBeenCalledTimes(renderCount);
-      expect(mockedFetchSearchWindow).toHaveBeenCalledTimes(1);
+      expect(fetch).toHaveBeenCalledTimes(1);
     }
   );
 
