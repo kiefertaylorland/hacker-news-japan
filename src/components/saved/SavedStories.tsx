@@ -5,6 +5,8 @@ import { useOptimistic, useTransition } from "react";
 import { ArrowLeftIcon } from "lucide-react";
 import { StoryGrid } from "@/components/stories/StoryGrid";
 import { UserMenu } from "@/components/auth/UserMenu";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { PageShell } from "@/components/layout/PageShell";
 import { toggleBookmark } from "@/lib/bookmarks/actions";
 import type { AuthUser } from "@/lib/auth/user";
 import type { HNStory } from "@/lib/types";
@@ -28,34 +30,30 @@ export function SavedStories({ user, stories }: SavedStoriesProps) {
   };
 
   return (
-    <main className="min-h-screen w-full py-6 px-4 sm:py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-3">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-hn/80 hover:text-hn"
-            >
-              <ArrowLeftIcon className="h-3.5 w-3.5" />
-              Back to search
-            </Link>
-            <h1 className="text-4xl font-bold tracking-tight text-slate-100">Saved stories</h1>
-            <p className="max-w-md text-sm text-slate-500">
-              Stories you bookmarked, newest first.
-            </p>
-          </div>
-          <UserMenu user={user} next="/saved" />
-        </div>
+    <PageShell>
+      <PageHeader
+        eyebrow={
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-hn/80 hover:text-hn"
+          >
+            <ArrowLeftIcon className="h-3.5 w-3.5" />
+            Back to search
+          </Link>
+        }
+        title={<h1 className="text-4xl font-bold tracking-tight text-slate-100">Saved stories</h1>}
+        description="Stories you bookmarked, newest first."
+        actions={<UserMenu user={user} next="/saved" />}
+      />
 
-        <StoryGrid
-          stories={visibleStories}
-          isLoading={false}
-          savedIds={visibleStories.map((story) => story.objectID)}
-          onToggleSave={handleToggleSave}
-          emptyTitle="No saved stories yet"
-          emptyDescription="Use the bookmark button on a story to save it here."
-        />
-      </div>
-    </main>
+      <StoryGrid
+        stories={visibleStories}
+        isLoading={false}
+        savedIds={visibleStories.map((story) => story.objectID)}
+        onToggleSave={handleToggleSave}
+        emptyTitle="No saved stories yet"
+        emptyDescription="Use the bookmark button on a story to save it here."
+      />
+    </PageShell>
   );
 }

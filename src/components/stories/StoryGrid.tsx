@@ -4,14 +4,7 @@ import { memo } from "react";
 import type { HNStory } from "@/lib/types";
 import { StoryCard } from "./StoryCard";
 import { StoryCardSkeleton } from "./StoryCardSkeleton";
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
+import { EmptyState } from "@/components/layout/EmptyState";
 import { SearchXIcon } from "lucide-react";
 
 interface StoryGridProps {
@@ -45,16 +38,12 @@ export const StoryGrid = memo(function StoryGrid({
   // Show empty state if no stories
   if (!stories || stories.length === 0) {
     return (
-      <Empty className="animate-slide-up border border-dashed border-white/10 bg-white/[0.02]">
-        <EmptyHeader>
-          <EmptyMedia variant="icon" className="bg-white/5 text-slate-400">
-            <SearchXIcon />
-          </EmptyMedia>
-          <EmptyTitle className="text-slate-200">{emptyTitle}</EmptyTitle>
-          <EmptyDescription className="text-slate-500">{emptyDescription}</EmptyDescription>
-        </EmptyHeader>
-        <EmptyContent />
-      </Empty>
+      <EmptyState
+        className="animate-slide-up"
+        icon={<SearchXIcon />}
+        title={emptyTitle}
+        description={emptyDescription}
+      />
     );
   }
 
