@@ -34,8 +34,6 @@ export function useSearch(
   const { query, storyType, dateRange, sortBy, page } = params;
   // Params the server used to produce `initialResults`; matching them skips the client fetch.
   const initialParamsRef = useRef(initialParams ?? params);
-  // Latest params read from the URL, so the fetch effect need not depend on `searchParams`.
-  const urlParamsRef = useRef(params);
   // True while the typed query has not been written to the URL yet.
   const queryDirtyRef = useRef(false);
 
@@ -49,7 +47,6 @@ export function useSearch(
 
   useEffect(() => {
     const next = readSearchParams(searchParams);
-    urlParamsRef.current = next;
     setParams((current) => (sameSearchParams(current, next) ? current : next));
   }, [searchParams]);
 
@@ -69,12 +66,10 @@ export function useSearch(
       window.history.replaceState(null, "", toSearchUrl(current));
     }
 
+    // Only the params the server actually rendered may reuse the seeded results; any
+    // client-side change must fetch (the server never re-renders on pushState).
     const serverParams = initialParams ?? initialParamsRef.current;
-    if (
-      initialResults &&
-      (sameSearchParams(current, serverParams) ||
-        (initialParams !== undefined && sameSearchParams(urlParamsRef.current, serverParams)))
-    ) {
+    if (initialResults && sameSearchParams(current, serverParams)) {
       setResults(initialResults);
       setIsLoading(false);
       setError(null);

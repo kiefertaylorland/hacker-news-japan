@@ -423,6 +423,36 @@ describe("useSearch", () => {
       expect(mockedSearchStories).toHaveBeenCalledTimes(1);
     });
 
+    it("fetches on the first filter change before the URL has caught up with pushState", async () => {
+      const initialParams: SearchParams = {
+        query: "",
+        storyType: "all",
+        dateRange: "all",
+        sortBy: "date_desc",
+        page: 0,
+      };
+      const sorted = { ...response, query: "sorted" };
+      mockedSearchStories.mockResolvedValue(sorted);
+      const { result } = renderHook(() => useSearch(response, initialParams));
+      expect(mockedSearchStories).not.toHaveBeenCalled();
+
+      // useSearchParams still reports the server URL here: Next syncs it asynchronously.
+      await act(async () => result.current.setSortBy("points"));
+      expect(mockedSearchStories).toHaveBeenCalledTimes(1);
+      expect(mockedSearchStories).toHaveBeenCalledWith(
+        { ...initialParams, sortBy: "points" },
+        expect.any(AbortSignal)
+      );
+      await waitFor(() => expect(result.current.results).toBe(sorted));
+
+      await act(async () => result.current.setStoryType("job"));
+      expect(mockedSearchStories).toHaveBeenCalledTimes(2);
+      expect(mockedSearchStories).toHaveBeenLastCalledWith(
+        { ...initialParams, sortBy: "points", storyType: "job" },
+        expect.any(AbortSignal)
+      );
+    });
+
     it("uses new server results after search-param navigation without fetching", async () => {
       const paged = { ...response, page: 1 };
       const initialParams: SearchParams = {
@@ -447,7 +477,11 @@ describe("useSearch", () => {
       });
 
       await waitFor(() => expect(result.current.results).toBe(paged));
-      expect(mockedSearchStories).not.toHaveBeenCalled();
+      // State catches up one render after the props; any request started in between is aborted.
+      for (const call of mockedSearchStories.mock.calls) {
+        expect(call[1]!.aborted).toBe(true);
+      }
+      expect(result.current.isLoading).toBe(false);
     });
   });
 });

@@ -5,7 +5,7 @@ import {
   getUnixTimestamp,
   sortHitsByStrategy,
 } from "@/lib/search/algolia";
-import { DEFAULT_SEARCH_PARAMS, HITS_PER_PAGE } from "@/lib/constants";
+import { CLIENT_SORT_WINDOW, DEFAULT_SEARCH_PARAMS, HITS_PER_PAGE } from "@/lib/constants";
 import type { SearchParams, SortBy } from "@/lib/types";
 import { makeStory } from "../../fixtures/stories";
 
@@ -69,6 +69,19 @@ describe("buildAlgoliaURL", () => {
     expect(build()).toContain("/search_by_date?");
     for (const sort of ["relevance", "date_asc", "points", "comments"] as const) {
       expect(build({ sortBy: sort })).toContain("/search?");
+    }
+  });
+
+  it("fetches one fixed window from page 0 for client-side sorts", () => {
+    for (const sort of ["date_asc", "points", "comments"] as const) {
+      const url = new URL(build({ sortBy: sort, page: 4 }));
+      expect(url.searchParams.get("page")).toBe("0");
+      expect(url.searchParams.get("hitsPerPage")).toBe(String(CLIENT_SORT_WINDOW));
+    }
+    for (const sort of ["relevance", "date_desc"] as const) {
+      const url = new URL(build({ sortBy: sort, page: 4 }));
+      expect(url.searchParams.get("page")).toBe("4");
+      expect(url.searchParams.get("hitsPerPage")).toBe(String(HITS_PER_PAGE));
     }
   });
 

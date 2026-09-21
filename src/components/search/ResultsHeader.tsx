@@ -1,13 +1,15 @@
-import type { AlgoliaResponse } from "@/lib/types";
+import type { AlgoliaResponse, SortBy } from "@/lib/types";
+import { CLIENT_SORTS } from "@/lib/search/algolia";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface ResultsHeaderProps {
   query: string;
   results: AlgoliaResponse | null;
   isLoading: boolean;
+  sortBy?: SortBy;
 }
 
-export function ResultsHeader({ query, results, isLoading }: ResultsHeaderProps) {
+export function ResultsHeader({ query, results, isLoading, sortBy }: ResultsHeaderProps) {
   if (isLoading) {
     return <Skeleton className="h-6 w-48" />;
   }
@@ -17,12 +19,15 @@ export function ResultsHeader({ query, results, isLoading }: ResultsHeaderProps)
   }
 
   const count = results.nbHits;
+  // Client sorts rank a bounded window of the most relevant matches, not every hit.
+  const isWindowed = sortBy !== undefined && CLIENT_SORTS.has(sortBy);
 
   return (
     <div className="flex animate-fade-in items-center justify-between gap-4">
       <div className="flex min-w-0 items-center gap-3">
         <div className="h-5 w-1 shrink-0 rounded-full bg-hn/70" />
         <p className="min-w-0 break-words text-sm text-slate-400">
+          {isWindowed && <span className="mr-1.5 text-slate-600">Top</span>}
           <span className="font-bold tabular-nums text-slate-100">
             {count.toLocaleString()}
           </span>
