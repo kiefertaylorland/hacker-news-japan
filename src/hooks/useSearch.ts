@@ -24,26 +24,33 @@ interface UseSearchReturn extends SearchParams {
   setPage: (page: number) => void;
 }
 
+function readSearchParams(searchParams: URLSearchParams): SearchParams {
+  return {
+    query: searchParams.get("query") || DEFAULT_SEARCH_PARAMS.query,
+    storyType: (searchParams.get("storyType") as StoryType) || DEFAULT_SEARCH_PARAMS.storyType,
+    dateRange: (searchParams.get("dateRange") as DateRange) || DEFAULT_SEARCH_PARAMS.dateRange,
+    sortBy: (searchParams.get("sortBy") as SortBy) || DEFAULT_SEARCH_PARAMS.sortBy,
+    page: parseInt(searchParams.get("page") || "0", 10),
+  };
+}
+
+function toSearchUrl(params: SearchParams): string {
+  const query = new URLSearchParams({
+    query: params.query,
+    storyType: params.storyType,
+    dateRange: params.dateRange,
+    sortBy: params.sortBy,
+    page: params.page.toString(),
+  });
+  return `/?${query.toString()}`;
+}
+
 export function useSearch(): UseSearchReturn {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Parse URL parameters
-  const initialQuery = searchParams.get("query") || DEFAULT_SEARCH_PARAMS.query;
-  const initialStoryType =
-    (searchParams.get("storyType") as StoryType) || DEFAULT_SEARCH_PARAMS.storyType;
-  const initialDateRange =
-    (searchParams.get("dateRange") as DateRange) || DEFAULT_SEARCH_PARAMS.dateRange;
-  const initialSortBy =
-    (searchParams.get("sortBy") as SortBy) || DEFAULT_SEARCH_PARAMS.sortBy;
-  const initialPage = parseInt(searchParams.get("page") || "0", 10);
-
-  // Local state
-  const [query, setQueryLocal] = useState(initialQuery);
-  const [storyType, setStoryType] = useState<StoryType>(initialStoryType);
-  const [dateRange, setDateRange] = useState<DateRange>(initialDateRange);
-  const [sortBy, setSortBy] = useState<SortBy>(initialSortBy);
-  const [page, setPageLocal] = useState(initialPage);
+  const [params, setParams] = useState<SearchParams>(() => readSearchParams(searchParams));
+  const { query, storyType, dateRange, sortBy, page } = params;
 
   // Debounced query for API calls
   const debouncedQuery = useDebounce(query, 300);
@@ -52,24 +59,6 @@ export function useSearch(): UseSearchReturn {
   const [results, setResults] = useState<AlgoliaResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Update URL when any parameter changes
-  const updateUrl = useCallback(
-    (q: string, st: StoryType, dr: DateRange, sb: SortBy, p: number) => {
-      const params = new URLSearchParams({
-        query: q,
-        storyType: st,
-        dateRange: dr,
-        sortBy: sb,
-        page: p.toString(),
-      });
-
-      // Build URL and remove trailing &
-      const url = `/?${params.toString()}`;
-      router.push(url, { scroll: true });
-    },
-    [router]
-  );
 
   // Fetch results when debounced query or filters change
   useEffect(() => {
@@ -87,21 +76,16 @@ export function useSearch(): UseSearchReturn {
       setError(null);
 
       try {
-        const data = await searchStories({
-          query: debouncedQuery,
-          storyType,
-          dateRange,
-          sortBy,
-          page,
-        }, controller.signal);
-        if (!controller.signal.aborted) {
-          setResults(data);
-        }
+        const data = await searchStories(
+          { query: debouncedQuery, storyType, dateRange, sortBy, page },
+          controller.signal
+        );
+        if (controller.signal.aborted) return;
+        setResults(data);
       } catch (err) {
-        if (!controller.signal.aborted) {
-          setError(err instanceof Error ? err.message : "Unknown error");
-          setResults(null);
-        }
+        if (controller.signal.aborted) return;
+        setError(err instanceof Error ? err.message : "Unknown error");
+        setResults(null);
       } finally {
         if (!controller.signal.aborted) {
           setIsLoading(false);
@@ -114,50 +98,21 @@ export function useSearch(): UseSearchReturn {
     return () => controller.abort();
   }, [query, debouncedQuery, storyType, dateRange, sortBy, page]);
 
-  // Setters that also update URL
-  const setQuery = useCallback((newQuery: string) => {
-    setQueryLocal(newQuery);
-    // Reset page when query changes
-    setPageLocal(0);
-    updateUrl(newQuery, storyType, dateRange, sortBy, 0);
-  }, [storyType, dateRange, sortBy, updateUrl]);
+  // Any filter change resets to the first page; only an explicit page change keeps one.
+  const applyChange = useCallback(
+    (patch: Partial<SearchParams>) => {
+      const next = { ...params, page: 0, ...patch };
+      setParams(next);
+      router.push(toSearchUrl(next), { scroll: true });
+    },
+    [params, router]
+  );
 
-  const handleSetStoryType = useCallback((newType: StoryType) => {
-    setStoryType(newType);
-    setPageLocal(0);
-    updateUrl(query, newType, dateRange, sortBy, 0);
-  }, [query, dateRange, sortBy, updateUrl]);
+  const setQuery = useCallback((query: string) => applyChange({ query }), [applyChange]);
+  const setStoryType = useCallback((storyType: StoryType) => applyChange({ storyType }), [applyChange]);
+  const setDateRange = useCallback((dateRange: DateRange) => applyChange({ dateRange }), [applyChange]);
+  const setSortBy = useCallback((sortBy: SortBy) => applyChange({ sortBy }), [applyChange]);
+  const setPage = useCallback((page: number) => applyChange({ page }), [applyChange]);
 
-  const handleSetDateRange = useCallback((newRange: DateRange) => {
-    setDateRange(newRange);
-    setPageLocal(0);
-    updateUrl(query, storyType, newRange, sortBy, 0);
-  }, [query, storyType, sortBy, updateUrl]);
-
-  const handleSetSortBy = useCallback((newSort: SortBy) => {
-    setSortBy(newSort);
-    setPageLocal(0);
-    updateUrl(query, storyType, dateRange, newSort, 0);
-  }, [query, storyType, dateRange, updateUrl]);
-
-  const setPage = useCallback((newPage: number) => {
-    setPageLocal(newPage);
-    updateUrl(query, storyType, dateRange, sortBy, newPage);
-  }, [query, storyType, dateRange, sortBy, updateUrl]);
-
-  return {
-    query,
-    storyType,
-    dateRange,
-    sortBy,
-    page,
-    results,
-    isLoading,
-    error,
-    setQuery,
-    setStoryType: handleSetStoryType,
-    setDateRange: handleSetDateRange,
-    setSortBy: handleSetSortBy,
-    setPage,
-  };
+  return { ...params, results, isLoading, error, setQuery, setStoryType, setDateRange, setSortBy, setPage };
 }
