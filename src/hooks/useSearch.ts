@@ -18,14 +18,17 @@ interface UseSearchReturn extends SearchParams {
   setPage: (page: number) => void;
 }
 
-export function useSearch(initialResults: AlgoliaResponse | null = null): UseSearchReturn {
+export function useSearch(
+  initialResults: AlgoliaResponse | null = null,
+  initialParams?: SearchParams
+): UseSearchReturn {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const [params, setParams] = useState<SearchParams>(() => readSearchParams(searchParams));
   const { query, storyType, dateRange, sortBy, page } = params;
   // Params the server used to produce `initialResults`; matching them skips the client fetch.
-  const initialParamsRef = useRef(params);
+  const initialParamsRef = useRef(initialParams ?? params);
 
   // Debounced query for API calls
   const debouncedQuery = useDebounce(query, 300);
@@ -51,7 +54,13 @@ export function useSearch(initialResults: AlgoliaResponse | null = null): UseSea
     }
 
     const current = { query: debouncedQuery, storyType, dateRange, sortBy, page };
-    if (initialResults && sameSearchParams(current, initialParamsRef.current)) {
+    const serverParams = initialParams ?? initialParamsRef.current;
+    const urlParams = readSearchParams(searchParams);
+    if (
+      initialResults &&
+      (sameSearchParams(current, serverParams) ||
+        (initialParams !== undefined && sameSearchParams(urlParams, serverParams)))
+    ) {
       setResults(initialResults);
       setIsLoading(false);
       setError(null);
@@ -81,7 +90,7 @@ export function useSearch(initialResults: AlgoliaResponse | null = null): UseSea
     // Fetch results with current parameters (empty query is valid—returns top stories)
     fetchResults();
     return () => controller.abort();
-  }, [query, debouncedQuery, storyType, dateRange, sortBy, page, initialResults]);
+  }, [query, debouncedQuery, storyType, dateRange, sortBy, page, initialResults, initialParams, searchParams]);
 
   // Any filter change resets to the first page.
   const applyFilterChange = useCallback(

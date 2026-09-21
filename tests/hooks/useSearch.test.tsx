@@ -2,7 +2,7 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useSearch } from "@/hooks/useSearch";
 import { searchStories } from "@/lib/search/api";
-import type { AlgoliaResponse } from "@/lib/types";
+import type { AlgoliaResponse, SearchParams } from "@/lib/types";
 import { makeResults } from "../fixtures/stories";
 
 let currentSearchParams = new URLSearchParams();
@@ -384,6 +384,33 @@ describe("useSearch", () => {
       expect(result.current.results).toBe(response);
       expect(result.current.isLoading).toBe(false);
       expect(mockedSearchStories).toHaveBeenCalledTimes(1);
+    });
+
+    it("uses new server results after search-param navigation without fetching", async () => {
+      const paged = { ...response, page: 1 };
+      const initialParams: SearchParams = {
+        query: "",
+        storyType: "all",
+        dateRange: "all",
+        sortBy: "date_desc",
+        page: 0,
+      };
+      const { result, rerender } = renderHook(
+        ({ results, params }) => useSearch(results, params),
+        { initialProps: { results: response, params: initialParams } }
+      );
+
+      expect(result.current.results).toBe(response);
+      expect(mockedSearchStories).not.toHaveBeenCalled();
+
+      currentSearchParams = new URLSearchParams("page=1");
+      rerender({
+        results: paged,
+        params: { ...initialParams, page: 1 },
+      });
+
+      await waitFor(() => expect(result.current.results).toBe(paged));
+      expect(mockedSearchStories).not.toHaveBeenCalled();
     });
   });
 });

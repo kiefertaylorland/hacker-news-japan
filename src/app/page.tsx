@@ -34,6 +34,7 @@ async function HomeContent({ searchParams }: HomeProps) {
       user={user}
       savedIds={savedIds}
       initialResults={initialResults}
+      initialParams={search}
       authError={record[AUTH_ERROR_PARAM] !== undefined}
     />
   );
