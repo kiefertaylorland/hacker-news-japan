@@ -82,9 +82,7 @@ export function useSearch(
     }
 
     const windowKey = CLIENT_SORTS.has(sortBy) ? searchWindowKey(current) : null;
-    // Stryker disable next-line ConditionalExpression: windowRef.current?.key is always a
-    // non-null string (or undefined), so it can never strictly equal a null windowKey; forcing
-    // this check to `true` cannot change which branch runs.
+    // Stryker disable next-line ConditionalExpression: windowRef.current?.key is never null, so either value of this guard is equivalent.
     if (windowKey !== null && windowRef.current?.key === windowKey) {
       setResults(pageSearchWindow(windowRef.current.data, page));
       setIsLoading(false);
