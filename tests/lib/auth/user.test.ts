@@ -1,16 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { getCurrentUser } from "@/lib/auth/user";
 import { createClient } from "@/lib/supabase/server";
-import { mockAuthClient } from "../../helpers/mockSupabase";
+import { withMockedAuthClient } from "../../helpers/mockSupabase";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 
-const auth = mockAuthClient();
-
-beforeEach(() => {
-  auth.getClaims.mockReset();
-  vi.mocked(createClient).mockResolvedValue({ auth } as never);
-});
+const auth = withMockedAuthClient(vi.mocked(createClient));
 
 describe("getCurrentUser", () => {
   it("returns null when there are no claims", async () => {

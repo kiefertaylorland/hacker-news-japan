@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { signInWithGitHub, signOut } from "@/app/auth/actions";
 import { createClient } from "@/lib/supabase/server";
-import { mockAuthClient } from "../helpers/mockSupabase";
+import { withMockedAuthClient } from "../helpers/mockSupabase";
 
 const headerValues = vi.hoisted(() => new Map<string, string>());
 
@@ -12,12 +12,10 @@ vi.mock("next/navigation", () => import("../helpers/mockNext").then((m) => m.nav
 vi.mock("next/cache", () => import("../helpers/mockNext").then((m) => m.cacheMock()));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 
-const auth = mockAuthClient();
+const auth = withMockedAuthClient(vi.mocked(createClient));
 
 beforeEach(() => {
   headerValues.clear();
-  Object.values(auth).forEach((fn) => fn.mockReset());
-  vi.mocked(createClient).mockResolvedValue({ auth } as never);
 });
 
 describe("signInWithGitHub", () => {
@@ -37,15 +35,12 @@ describe("signInWithGitHub", () => {
     });
   });
 
-  it("defaults next to the home page when no form data is given", async () => {
+  it.each([
+    ["no form data is given", undefined],
+    ["form data has no next field", new FormData()],
+  ])("defaults next to the home page when %s", async (_label, formData) => {
     auth.signInWithOAuth.mockResolvedValue({ data: { url: "https://github.com/login/oauth" }, error: null });
-    await expect(signInWithGitHub()).rejects.toThrow("REDIRECT:");
-    expect(auth.signInWithOAuth.mock.calls[0][0].options.redirectTo).toContain("next=%2F");
-  });
-
-  it("defaults next to the home page when form data has no next field", async () => {
-    auth.signInWithOAuth.mockResolvedValue({ data: { url: "https://github.com/login/oauth" }, error: null });
-    await expect(signInWithGitHub(new FormData())).rejects.toThrow("REDIRECT:");
+    await expect(signInWithGitHub(formData)).rejects.toThrow("REDIRECT:");
     expect(auth.signInWithOAuth.mock.calls[0][0].options.redirectTo).toContain("next=%2F");
   });
 

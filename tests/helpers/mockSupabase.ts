@@ -1,4 +1,4 @@
-import { vi } from "vitest";
+import { beforeEach, vi } from "vitest";
 
 export type QueryResult = { data?: unknown; error?: unknown };
 
@@ -24,4 +24,19 @@ export function mockAuthClient() {
     signOut: vi.fn(),
     exchangeCodeForSession: vi.fn(),
   };
+}
+
+/**
+ * Creates a `mockAuthClient()` and wires it into a mocked `createClient`, resetting every
+ * auth method and re-resolving `createClient` before each test. Requires the caller to have
+ * already done `vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }))` (vi.mock
+ * is hoisted per-file, so it can't be moved in here).
+ */
+export function withMockedAuthClient(createClient: ReturnType<typeof vi.fn>) {
+  const auth = mockAuthClient();
+  beforeEach(() => {
+    Object.values(auth).forEach((fn) => fn.mockReset());
+    vi.mocked(createClient).mockResolvedValue({ auth } as never);
+  });
+  return auth;
 }
