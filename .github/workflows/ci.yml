@@ -32,3 +32,27 @@ jobs:
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_placeholder
       - run: npm test
       - run: npm run cpd
+
+  db-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - run: npm ci
+      - uses: supabase/setup-cli@v3
+      - run: supabase start
+      - run: supabase test db
+      - name: Load local Supabase connection info
+        run: |
+          status=$(supabase status -o env)
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=$(echo "$status" | grep '^API_URL=' | cut -d= -f2- | tr -d '"')"
+            echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$(echo "$status" | grep '^PUBLISHABLE_KEY=' | cut -d= -f2- | tr -d '"')"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$(echo "$status" | grep '^SECRET_KEY=' | cut -d= -f2- | tr -d '"')"
+          } >> "$GITHUB_ENV"
+      - run: npm run test:integration
+      - run: supabase stop
+        if: always()

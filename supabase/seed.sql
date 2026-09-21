@@ -1,0 +1,3 @@
+-- Intentionally empty: no static fixture data is needed for local dev.
+-- Test fixtures for pgTAP (supabase/tests/database/) and the integration
+-- suite (tests/integration/) are created dynamically per test run instead.
