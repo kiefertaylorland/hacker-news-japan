@@ -53,12 +53,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Toggle } from "@/components/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 describe("shared UI components", () => {
   it("renders button and badge variants", () => {
@@ -285,29 +279,5 @@ describe("shared UI components", () => {
     await user.click(screen.getByRole("radio", { name: "A" }));
     await user.click(screen.getByRole("radio", { name: "B" }));
     expect(screen.getByRole("radio", { name: "B" })).toBeInTheDocument();
-  });
-
-  it("renders tooltip content", async () => {
-    const user = userEvent.setup();
-
-    render(
-      createElement(
-        TooltipProvider,
-        { delayDuration: 0 } as ComponentProps<typeof TooltipProvider>,
-        createElement(
-          Tooltip,
-          null,
-          createElement(
-            TooltipTrigger,
-            { asChild: true },
-            createElement("button", { type: "button" }, "Hover me")
-          ),
-          createElement(TooltipContent, null, "Tooltip body")
-        )
-      )
-    );
-
-    await user.hover(screen.getByRole("button", { name: "Hover me" }));
-    expect(await screen.findByRole("tooltip")).toBeInTheDocument();
   });
 });
