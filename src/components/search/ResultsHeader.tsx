@@ -20,8 +20,7 @@ export function ResultsHeader({ query, results, isLoading, sortBy }: ResultsHead
 
   const count = results.nbHits;
   // Client sorts rank a bounded window of the most relevant matches, not every hit.
-  // Stryker disable next-line ConditionalExpression: CLIENT_SORTS.has(undefined) is always
-  // false, so forcing the left operand to `true` cannot change the result.
+  // Stryker disable next-line ConditionalExpression: CLIENT_SORTS.has(undefined) is always false, so this left operand is equivalent either way.
   const isWindowed = sortBy !== undefined && CLIENT_SORTS.has(sortBy);
 
   return (
