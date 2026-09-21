@@ -19,3 +19,10 @@ export function cacheMock() {
 export function authActionsMock() {
   return { signInWithGitHub: vi.fn(), signOut: vi.fn() };
 }
+
+/** `next/headers` mock backed by a Map the test can populate and clear between cases. */
+export function headersMock(store: Map<string, string>) {
+  return {
+    headers: vi.fn(async () => ({ get: (name: string) => store.get(name) ?? null })),
+  };
+}

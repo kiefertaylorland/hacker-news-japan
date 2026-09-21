@@ -1,11 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getRequestOrigin, resolveRedirectOrigin, sanitizeNextPath } from "@/lib/auth/origin";
 
-const headerValues = new Map<string, string>();
+const headerValues = vi.hoisted(() => new Map<string, string>());
 
-vi.mock("next/headers", () => ({
-  headers: vi.fn(async () => ({ get: (name: string) => headerValues.get(name) ?? null })),
-}));
+vi.mock("next/headers", () => import("../../helpers/mockNext").then((m) => m.headersMock(headerValues)));
 
 beforeEach(() => {
   headerValues.clear();

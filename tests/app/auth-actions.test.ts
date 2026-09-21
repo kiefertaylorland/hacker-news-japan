@@ -5,11 +5,9 @@ import { signInWithGitHub, signOut } from "@/app/auth/actions";
 import { createClient } from "@/lib/supabase/server";
 import { mockAuthClient } from "../helpers/mockSupabase";
 
-const headerValues = new Map<string, string>();
+const headerValues = vi.hoisted(() => new Map<string, string>());
 
-vi.mock("next/headers", () => ({
-  headers: vi.fn(async () => ({ get: (name: string) => headerValues.get(name) ?? null })),
-}));
+vi.mock("next/headers", () => import("../helpers/mockNext").then((m) => m.headersMock(headerValues)));
 vi.mock("next/navigation", () => import("../helpers/mockNext").then((m) => m.navigationMock()));
 vi.mock("next/cache", () => import("../helpers/mockNext").then((m) => m.cacheMock()));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
