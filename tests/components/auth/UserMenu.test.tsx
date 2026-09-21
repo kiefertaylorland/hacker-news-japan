@@ -12,6 +12,11 @@ describe("UserMenu", () => {
     expect(document.querySelector('input[name="next"]')).toHaveValue("/saved");
   });
 
+  it("defaults the next field to the home page when none is given", () => {
+    render(createElement(UserMenu, { user: null }));
+    expect(document.querySelector('input[name="next"]')).toHaveValue("/");
+  });
+
   it("shows the user, a saved link, and sign-out when signed in", () => {
     const { rerender } = render(
       createElement(UserMenu, { user: { id: "1", name: "octocat", avatarUrl: "https://a/img.png" } })

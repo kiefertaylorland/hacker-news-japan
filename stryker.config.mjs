@@ -17,9 +17,9 @@ export default {
     fileName: "reports/mutation/index.html",
   },
   thresholds: {
-    high: 85,
-    low: 70,
-    break: 85,
+    high: 100,
+    low: 85,
+    break: 95,
   },
   tempDirName: "stryker-tmp",
   cleanTempDir: true,

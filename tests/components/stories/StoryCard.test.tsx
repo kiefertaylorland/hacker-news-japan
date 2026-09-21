@@ -39,6 +39,20 @@ describe("StoryCard", () => {
     expect(container.querySelector(".border-l-2")).toHaveClass("border-l-blue-500/60");
   });
 
+  it.each([
+    ["ask_hn", "Ask HN", "border-blue-500/30", "border-l-blue-500/60"],
+    ["show_hn", "Show HN", "border-emerald-500/30", "border-l-emerald-500/60"],
+    ["job", "Job", "border-slate-500/30", "border-l-slate-500/40"],
+    ["story", "Story", "border-amber-500/30", "border-l-hn/50"],
+  ] as const)("applies the %s badge and accent classes", (tag, label, badgeClass, accentClass) => {
+    const { container } = render(
+      createElement(StoryCard, { story: makeStory({ _tags: tag === "story" ? [] : [tag] }) })
+    );
+    const badge = screen.getByText(label);
+    expect(badge).toHaveClass("shrink-0", "rounded-full", "px-2", "py-0.5", badgeClass);
+    expect(container.querySelector(".border-l-2")).toHaveClass(accentClass);
+  });
+
   it("renders story timestamps as relative text", async () => {
     render(createElement(StoryCard, { story: sampleStory }));
     await waitFor(() =>
@@ -60,5 +74,17 @@ describe("StoryCard", () => {
 
     rerender(createElement(StoryCard, { story: sampleStory, onToggleSave, isSaved: true }));
     expect(screen.getByRole("button", { name: "Remove bookmark" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("applies base and state-dependent classes to the bookmark button", () => {
+    const { rerender } = render(createElement(StoryCard, { story: sampleStory, onToggleSave: vi.fn() }));
+    const unsaved = screen.getByRole("button", { name: "Save story" });
+    expect(unsaved).toHaveClass("-mr-2", "-mt-1.5", "h-7", "w-7", "shrink-0", "hover:bg-white/10", "text-slate-500", "hover:text-slate-200");
+    expect(unsaved).not.toHaveClass("text-hn");
+
+    rerender(createElement(StoryCard, { story: sampleStory, onToggleSave: vi.fn(), isSaved: true }));
+    const saved = screen.getByRole("button", { name: "Remove bookmark" });
+    expect(saved).toHaveClass("-mr-2", "-mt-1.5", "h-7", "w-7", "shrink-0", "hover:bg-white/10", "text-hn");
+    expect(saved).not.toHaveClass("text-slate-500");
   });
 });

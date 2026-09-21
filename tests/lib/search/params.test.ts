@@ -36,4 +36,11 @@ describe("search params helpers", () => {
     expect(sameSearchParams(base, { ...base })).toBe(true);
     expect(sameSearchParams(base, { ...base, page: 3 })).toBe(false);
   });
+
+  it("reports a difference for every compared field", () => {
+    expect(sameSearchParams(base, { ...base, query: "osaka" })).toBe(false);
+    expect(sameSearchParams(base, { ...base, storyType: "all" })).toBe(false);
+    expect(sameSearchParams(base, { ...base, dateRange: "all" })).toBe(false);
+    expect(sameSearchParams(base, { ...base, sortBy: "date_desc" })).toBe(false);
+  });
 });

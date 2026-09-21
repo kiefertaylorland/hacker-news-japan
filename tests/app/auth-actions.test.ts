@@ -43,6 +43,12 @@ describe("signInWithGitHub", () => {
     expect(auth.signInWithOAuth.mock.calls[0][0].options.redirectTo).toContain("next=%2F");
   });
 
+  it("defaults next to the home page when form data has no next field", async () => {
+    auth.signInWithOAuth.mockResolvedValue({ data: { url: "https://github.com/login/oauth" }, error: null });
+    await expect(signInWithGitHub(new FormData())).rejects.toThrow("REDIRECT:");
+    expect(auth.signInWithOAuth.mock.calls[0][0].options.redirectTo).toContain("next=%2F");
+  });
+
   it.each([
     ["the provider returns an error", { data: { url: null }, error: { message: "nope" } }],
     ["no url is returned", { data: { url: null }, error: null }],

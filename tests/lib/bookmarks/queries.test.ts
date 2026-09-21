@@ -35,6 +35,7 @@ describe("getBookmarkIds", () => {
     const { from, builder } = mockQuery({ data: [{ object_id: "1" }, { object_id: "2" }] });
     expect(await getBookmarkIds("user-1")).toEqual(["1", "2"]);
     expect(from).toHaveBeenCalledWith("bookmarks");
+    expect(builder.select).toHaveBeenCalledWith("object_id");
     expect(builder.eq).toHaveBeenCalledWith("user_id", "user-1");
 
     mockQuery({ data: null });
@@ -49,6 +50,10 @@ describe("listBookmarks", () => {
   it("lists bookmarks newest first as stories", async () => {
     const { builder } = mockQuery({ data: [row] });
     expect(await listBookmarks("user-1")).toEqual([story]);
+    expect(builder.select).toHaveBeenCalledWith(
+      "user_id, object_id, title, url, author, points, num_comments, created_at_i, tags"
+    );
+    expect(builder.eq).toHaveBeenCalledWith("user_id", "user-1");
     expect(builder.order).toHaveBeenCalledWith("saved_at", { ascending: false });
 
     mockQuery({ data: null });

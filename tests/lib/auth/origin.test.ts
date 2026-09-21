@@ -27,6 +27,12 @@ describe("getRequestOrigin", () => {
   it("defaults to localhost when no host headers exist", async () => {
     expect(await getRequestOrigin()).toBe("http://localhost:3000");
   });
+
+  it("uses the forwarded proto header even when it differs from the host-based fallback", async () => {
+    headerValues.set("host", "example.com");
+    headerValues.set("x-forwarded-proto", "http");
+    expect(await getRequestOrigin()).toBe("http://example.com");
+  });
 });
 
 describe("sanitizeNextPath", () => {

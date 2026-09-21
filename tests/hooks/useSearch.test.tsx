@@ -1,4 +1,7 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
+import { createElement } from "react";
+import { flushSync } from "react-dom";
+import { createRoot } from "react-dom/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useSearch } from "@/hooks/useSearch";
 import { fetchSearchWindow, pageSearchWindow, searchStories } from "@/lib/search/api";
@@ -39,6 +42,10 @@ async function renderSearch() {
   return result;
 }
 
+function InitialLoadingProbe() {
+  return createElement("span", null, String(useSearch().isLoading));
+}
+
 describe("useSearch", () => {
   beforeEach(() => {
     currentSearchParams = new URLSearchParams();
@@ -46,6 +53,19 @@ describe("useSearch", () => {
     replaceState = vi.spyOn(window.history, "replaceState").mockImplementation(() => {});
     mockedSearchStories.mockReset();
     mockedFetchSearchWindow.mockReset();
+  });
+
+  it("starts with isLoading=false on the initial client render before effects run", async () => {
+    const container = document.createElement("div");
+    const root = createRoot(container);
+
+    flushSync(() => {
+      root.render(createElement(InitialLoadingProbe));
+    });
+
+    expect(container.textContent).toBe("false");
+    await waitFor(() => expect(mockedSearchStories).toHaveBeenCalledTimes(1));
+    root.unmount();
   });
 
   it("reads initial URL params and fetches results", async () => {
@@ -455,6 +475,115 @@ describe("useSearch", () => {
       "/?query=osaka&storyType=all&dateRange=all&sortBy=date_desc&page=0"
     );
   });
+  it("clears a previous error immediately once a new query starts debouncing", async () => {
+    mockedSearchStories.mockRejectedValueOnce(new Error("first error")).mockResolvedValue(response);
+    const { result } = renderHook(() => useSearch());
+    await waitFor(() => expect(result.current.error).toBe("first error"));
+
+    vi.useFakeTimers();
+    act(() => result.current.setQuery("osaka"));
+    expect(result.current.error).toBeNull();
+    vi.useRealTimers();
+  });
+
+  it("clears an existing error when returning to the seeded server params", async () => {
+    const paged = { ...response, page: 1 };
+    mockedSearchStories.mockResolvedValueOnce(paged).mockRejectedValueOnce(new Error("boom"));
+    const { result } = renderHook(() => useSearch(response));
+
+    await act(async () => result.current.setPage(1));
+    await waitFor(() => expect(result.current.results).toBe(paged));
+
+    await act(async () => result.current.setPage(2));
+    await waitFor(() => expect(result.current.error).toBe("boom"));
+
+    await act(async () => result.current.setPage(0));
+    expect(result.current.error).toBeNull();
+    expect(result.current.results).toBe(response);
+  });
+
+  it("clears a previous error when reverting to a cached client-sort window", async () => {
+    currentSearchParams = new URLSearchParams("sortBy=comments");
+    const windowResp = makeResults({ hits: [makeStory({ objectID: "1" })], nbHits: 1 });
+    mockedFetchSearchWindow.mockResolvedValueOnce(windowResp).mockRejectedValueOnce(new Error("boom"));
+    const { result } = renderHook(() => useSearch());
+    await waitFor(() => expect(result.current.results).toEqual(pageSearchWindow(windowResp, 0)));
+
+    await act(async () => result.current.setDateRange("week"));
+    await waitFor(() => expect(result.current.error).toBe("boom"));
+
+    await act(async () => result.current.setDateRange("all"));
+    expect(result.current.error).toBeNull();
+  });
+
+  it("clears a previous error as soon as a new fetch starts", async () => {
+    mockedSearchStories.mockRejectedValueOnce(new Error("first")).mockResolvedValue(response);
+    const { result } = renderHook(() => useSearch());
+    await waitFor(() => expect(result.current.error).toBe("first"));
+
+    const pending = deferredResponse();
+    mockedSearchStories.mockReturnValueOnce(pending.promise);
+    act(() => result.current.setPage(1));
+    expect(result.current.error).toBeNull();
+    await act(async () => pending.resolve(response));
+  });
+
+  it("clears previously loaded results when a later request fails", async () => {
+    mockedSearchStories.mockResolvedValueOnce(response).mockRejectedValueOnce(new Error("boom"));
+    const { result } = renderHook(() => useSearch());
+    await waitFor(() => expect(result.current.results).toBe(response));
+
+    await act(async () => result.current.setPage(1));
+    await waitFor(() => expect(result.current.error).toBe("boom"));
+    expect(result.current.results).toBeNull();
+  });
+
+  it("does not repeat replaceState after the debounced query has already synced the URL", async () => {
+    vi.useRealTimers();
+    mockedSearchStories.mockResolvedValue(response);
+    const { result, rerender } = renderHook(() => useSearch());
+    await waitFor(() => expect(result.current.results).toEqual(response));
+
+    vi.useFakeTimers();
+    act(() => result.current.setQuery("osaka"));
+    await act(async () => vi.advanceTimersByTime(300));
+    expect(replaceState).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+
+    // An external URL change (e.g. browser back/forward) re-runs the fetch effect without
+    // going through navigate(), which is the only other place queryDirtyRef is reset.
+    currentSearchParams = new URLSearchParams("query=osaka&page=1");
+    rerender();
+    await waitFor(() => expect(result.current.page).toBe(1));
+
+    expect(replaceState).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not cache a stale aborted client-sort window response", async () => {
+    currentSearchParams = new URLSearchParams("sortBy=comments");
+    const stale = deferredResponse();
+    const fresh = makeResults({ hits: [makeStory({ objectID: "fresh" })], nbHits: 1 });
+    mockedFetchSearchWindow.mockReturnValueOnce(stale.promise).mockResolvedValueOnce(fresh);
+
+    const { result } = renderHook(() => useSearch());
+    const staleSignal = mockedFetchSearchWindow.mock.lastCall![1]!;
+
+    // A page change re-runs the effect before the mount fetch settles: aborts the first
+    // request and starts a second with the same window key.
+    act(() => result.current.setPage(1));
+    expect(staleSignal.aborted).toBe(true);
+    await waitFor(() => expect(result.current.results).toEqual(pageSearchWindow(fresh, 1)));
+    expect(mockedFetchSearchWindow).toHaveBeenCalledTimes(2);
+
+    // The aborted first request resolves later with different data; it must not clobber the cache.
+    const staleData = makeResults({ hits: [makeStory({ objectID: "stale" })], nbHits: 1 });
+    await act(async () => stale.resolve(staleData));
+
+    await act(async () => result.current.setPage(0));
+    expect(mockedFetchSearchWindow).toHaveBeenCalledTimes(2);
+    expect(result.current.results).toEqual(pageSearchWindow(fresh, 0));
+  });
+
   describe("with server-provided initial results", () => {
     it("seeds results and skips the mount fetch", async () => {
       const { result } = renderHook(() => useSearch(response));
