@@ -130,8 +130,7 @@ export function useSearch(
       setParams(next);
       window.history.pushState(null, "", toSearchUrl(next));
     },
-    // Stryker disable next-line ArrayDeclaration: the body closes over no outer values, so any
-    // constant dependency array (empty or not) memoizes this callback identically forever.
+    // Stryker disable next-line ArrayDeclaration: this callback closes over no changing values, so any constant dependency array is equivalent.
     []
   );
 
