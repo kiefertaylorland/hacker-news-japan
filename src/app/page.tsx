@@ -4,19 +4,37 @@ import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
 import { AUTH_ERROR_PARAM } from "@/lib/auth/constants";
 import { getCurrentUser } from "@/lib/auth/user";
 import { getBookmarkIds } from "@/lib/bookmarks/queries";
+import { getCachedStories } from "@/lib/search/cached";
+import { readSearchParams, searchParamsFromRecord, type SearchParamsRecord } from "@/lib/search/params";
 
 interface HomeProps {
-  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+  searchParams?: Promise<SearchParamsRecord>;
 }
 
-export default async function Home({ searchParams }: HomeProps) {
-  const params = (await searchParams) ?? {};
-  const user = await getCurrentUser();
+// The skeleton is the prerendered shell; user data and cached stories stream in.
+export default function Home({ searchParams }: HomeProps) {
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <HomeContent searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function HomeContent({ searchParams }: HomeProps) {
+  const record = (await searchParams) ?? {};
+  const search = readSearchParams(searchParamsFromRecord(record));
+  const [user, initialResults] = await Promise.all([
+    getCurrentUser(),
+    getCachedStories(search).catch(() => null),
+  ]);
   const savedIds = await getBookmarkIds(user?.id ?? null);
 
   return (
-    <Suspense fallback={<DashboardSkeleton />}>
-      <Dashboard user={user} savedIds={savedIds} authError={params[AUTH_ERROR_PARAM] !== undefined} />
-    </Suspense>
+    <Dashboard
+      user={user}
+      savedIds={savedIds}
+      initialResults={initialResults}
+      authError={record[AUTH_ERROR_PARAM] !== undefined}
+    />
   );
 }

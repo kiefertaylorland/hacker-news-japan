@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/auth/user";
 import { createClient } from "@/lib/supabase/server";
 import { authUser, sampleBookmarkRow } from "../fixtures/stories";
 import { mockQueryBuilder } from "../helpers/mockSupabase";
+import { renderServerPage } from "../helpers/renderServerPage";
 
 vi.mock("@/app/auth/actions", () => import("../helpers/mockNext").then((m) => m.authActionsMock()));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
@@ -19,7 +20,9 @@ beforeEach(() => {
 describe("saved page", () => {
   it("asks anonymous visitors to sign in", async () => {
     mockedGetCurrentUser.mockResolvedValue(null);
-    render(await SavedPage());
+    render(SavedPage().props.fallback);
+    expect(screen.getByRole("main")).toBeInTheDocument();
+    await renderServerPage(SavedPage());
     expect(screen.getByText("Sign in to see saved stories")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Sign in with GitHub" })).toBeInTheDocument();
     expect(metadata.title).toContain("Saved");
@@ -29,7 +32,7 @@ describe("saved page", () => {
     mockedGetCurrentUser.mockResolvedValue(authUser);
     const { from } = mockQueryBuilder({ data: [sampleBookmarkRow] });
     vi.mocked(createClient).mockResolvedValue({ from } as never);
-    render(await SavedPage());
+    await renderServerPage(SavedPage());
     expect(screen.getByRole("heading", { name: "Saved stories" })).toBeInTheDocument();
     expect(screen.getByText("Building in Japan")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Remove bookmark" })).toHaveAttribute("aria-pressed", "true");

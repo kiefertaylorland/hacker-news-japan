@@ -13,7 +13,7 @@ export function navigationMock() {
 }
 
 export function cacheMock() {
-  return { revalidatePath: vi.fn() };
+  return { revalidatePath: vi.fn(), cacheLife: vi.fn() };
 }
 
 export function authActionsMock() {

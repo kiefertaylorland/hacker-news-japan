@@ -360,4 +360,30 @@ describe("useSearch", () => {
       expect.any(AbortSignal)
     );
   });
+  describe("with server-provided initial results", () => {
+    it("seeds results and skips the mount fetch", async () => {
+      const { result } = renderHook(() => useSearch(response));
+
+      expect(result.current.results).toBe(response);
+      expect(result.current.isLoading).toBe(false);
+      expect(result.current.error).toBeNull();
+      await waitFor(() => expect(result.current.results).toBe(response));
+      expect(mockedSearchStories).not.toHaveBeenCalled();
+    });
+
+    it("fetches after a change and restores the seed when returning to the initial params", async () => {
+      const paged = { ...response, page: 1 };
+      mockedSearchStories.mockResolvedValue(paged);
+      const { result } = renderHook(() => useSearch(response));
+
+      await act(async () => result.current.setPage(1));
+      await waitFor(() => expect(result.current.results).toBe(paged));
+      expect(mockedSearchStories).toHaveBeenCalledTimes(1);
+
+      await act(async () => result.current.setPage(0));
+      expect(result.current.results).toBe(response);
+      expect(result.current.isLoading).toBe(false);
+      expect(mockedSearchStories).toHaveBeenCalledTimes(1);
+    });
+  });
 });
