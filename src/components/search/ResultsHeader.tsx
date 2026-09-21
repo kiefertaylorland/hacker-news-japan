@@ -1,5 +1,3 @@
-"use client";
-
 import type { AlgoliaResponse } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 

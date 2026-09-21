@@ -1,5 +1,3 @@
-"use client";
-
 import { PageShell } from "@/components/layout/PageShell";
 import { StoryGrid } from "@/components/stories/StoryGrid";
 import { Skeleton } from "@/components/ui/skeleton";
