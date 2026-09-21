@@ -1,8 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
-import { createBrowserClient, createServerClient } from "@supabase/ssr";
+import { createServerClient } from "@supabase/ssr";
 import { getSupabaseEnv } from "@/lib/supabase/env";
-import { createClient as createBrowserSupabase } from "@/lib/supabase/client";
 import { createClient as createServerSupabase } from "@/lib/supabase/server";
 import { config, proxy } from "@/proxy";
 
@@ -16,7 +15,6 @@ vi.mock("next/headers", () => ({
 }));
 
 vi.mock("@supabase/ssr", () => ({
-  createBrowserClient: vi.fn(() => ({ kind: "browser" })),
   createServerClient: vi.fn(),
 }));
 
@@ -50,16 +48,6 @@ describe("supabase environment", () => {
     process.env.NEXT_PUBLIC_SUPABASE_URL = "";
     expect(() => getSupabaseEnv()).toThrow(/Missing Supabase configuration/);
     process.env.NEXT_PUBLIC_SUPABASE_URL = previous;
-  });
-});
-
-describe("supabase browser client", () => {
-  it("creates a browser client from the environment", () => {
-    expect(createBrowserSupabase()).toEqual({ kind: "browser" });
-    expect(createBrowserClient).toHaveBeenCalledWith(
-      "https://example.supabase.co",
-      "sb_publishable_test"
-    );
   });
 });
 
