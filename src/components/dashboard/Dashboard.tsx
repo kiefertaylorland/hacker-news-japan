@@ -1,14 +1,12 @@
 "use client";
 
-import { useOptimistic, useTransition } from "react";
 import { useSearch } from "@/hooks/useSearch";
-import { toggleBookmark } from "@/lib/bookmarks/actions";
+import { useOptimisticBookmarks } from "@/hooks/useOptimisticBookmarks";
 import { UserMenu } from "@/components/auth/UserMenu";
 import { ErrorAlert } from "@/components/layout/ErrorAlert";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { PageShell } from "@/components/layout/PageShell";
 import type { AuthUser } from "@/lib/auth/user";
-import type { HNStory } from "@/lib/types";
 import { SearchBar } from "@/components/search/SearchBar";
 import { FilterBar } from "@/components/search/FilterBar";
 import { SortControls } from "@/components/search/SortControls";
@@ -41,20 +39,7 @@ export function Dashboard({ user = null, savedIds = EMPTY_IDS, authError = false
     setPage,
   } = useSearch();
 
-  const [, startTransition] = useTransition();
-  const [optimisticSavedIds, toggleSavedId] = useOptimistic(
-    savedIds,
-    (current: string[], objectID: string) =>
-      current.includes(objectID) ? current.filter((id) => id !== objectID) : [...current, objectID]
-  );
-
-  const handleToggleSave = (story: HNStory) => {
-    const isSaved = optimisticSavedIds.includes(story.objectID);
-    startTransition(async () => {
-      toggleSavedId(story.objectID);
-      await toggleBookmark(story, isSaved);
-    });
-  };
+  const bookmarks = useOptimisticBookmarks(savedIds);
 
   return (
     <PageShell>
@@ -99,8 +84,8 @@ export function Dashboard({ user = null, savedIds = EMPTY_IDS, authError = false
       <StoryGrid
         stories={results?.hits || null}
         isLoading={isLoading}
-        savedIds={optimisticSavedIds}
-        onToggleSave={user ? handleToggleSave : undefined}
+        savedIds={bookmarks.savedIds}
+        onToggleSave={user ? bookmarks.toggle : undefined}
       />
 
       <Pagination

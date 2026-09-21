@@ -1,13 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useOptimistic, useTransition } from "react";
 import { ArrowLeftIcon } from "lucide-react";
 import { StoryGrid } from "@/components/stories/StoryGrid";
 import { UserMenu } from "@/components/auth/UserMenu";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { PageShell } from "@/components/layout/PageShell";
-import { toggleBookmark } from "@/lib/bookmarks/actions";
+import { useOptimisticBookmarks } from "@/hooks/useOptimisticBookmarks";
 import type { AuthUser } from "@/lib/auth/user";
 import type { HNStory } from "@/lib/types";
 
@@ -17,17 +16,8 @@ interface SavedStoriesProps {
 }
 
 export function SavedStories({ user, stories }: SavedStoriesProps) {
-  const [, startTransition] = useTransition();
-  const [visibleStories, removeStory] = useOptimistic(stories, (current: HNStory[], objectID: string) =>
-    current.filter((story) => story.objectID !== objectID)
-  );
-
-  const handleToggleSave = (story: HNStory) => {
-    startTransition(async () => {
-      removeStory(story.objectID);
-      await toggleBookmark(story, true);
-    });
-  };
+  const bookmarks = useOptimisticBookmarks(stories.map((story) => story.objectID));
+  const visibleStories = stories.filter((story) => bookmarks.savedIds.includes(story.objectID));
 
   return (
     <PageShell>
@@ -49,8 +39,8 @@ export function SavedStories({ user, stories }: SavedStoriesProps) {
       <StoryGrid
         stories={visibleStories}
         isLoading={false}
-        savedIds={visibleStories.map((story) => story.objectID)}
-        onToggleSave={handleToggleSave}
+        savedIds={bookmarks.savedIds}
+        onToggleSave={bookmarks.toggle}
         emptyTitle="No saved stories yet"
         emptyDescription="Use the bookmark button on a story to save it here."
       />
