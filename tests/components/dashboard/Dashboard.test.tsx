@@ -4,6 +4,7 @@ import { createElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Dashboard } from "@/components/dashboard/Dashboard";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
+import { useOptimisticBookmarks } from "@/hooks/useOptimisticBookmarks";
 import type { HNStory } from "@/lib/types";
 import { authUser, sampleResults, sampleStory } from "../../fixtures/stories";
 import { mockSearchState } from "../../helpers/mockSearchState";
@@ -13,6 +14,13 @@ const useSearchMock = vi.fn();
 vi.mock("@/hooks/useSearch", () => ({
   useSearch: (initialResults: unknown, initialParams: unknown) => useSearchMock(initialResults, initialParams),
 }));
+
+vi.mock("@/hooks/useOptimisticBookmarks", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/hooks/useOptimisticBookmarks")>();
+  return { ...actual, useOptimisticBookmarks: vi.fn(actual.useOptimisticBookmarks) };
+});
+
+const mockedUseOptimisticBookmarks = vi.mocked(useOptimisticBookmarks);
 
 const toggleBookmarkMock = vi.fn(async (_story: HNStory, _isSaved: boolean) => {});
 
@@ -26,6 +34,13 @@ describe("Dashboard", () => {
   beforeEach(() => {
     useSearchMock.mockReset();
     toggleBookmarkMock.mockClear();
+    mockedUseOptimisticBookmarks.mockClear();
+  });
+
+  it("defaults to an empty saved-ids set when no savedIds prop is given", () => {
+    useSearchMock.mockReturnValue(mockSearchState({ results: sampleResults }));
+    render(createElement(Dashboard, { user: authUser }));
+    expect(mockedUseOptimisticBookmarks).toHaveBeenCalledWith([]);
   });
 
   it("renders the dashboard with results and an error", () => {

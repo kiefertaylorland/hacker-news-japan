@@ -37,10 +37,11 @@ describe("Pagination", () => {
     expect(screen.getByRole("button", { name: "Next" })).toBeEnabled();
     expect(screen.getAllByRole("button", { name: /^[1-5]$/ })).toHaveLength(5);
 
-    await user.click(screen.getByRole("button", { name: "2" }));
-    expect(onPageChange).toHaveBeenCalledWith(1);
     await user.click(screen.getByRole("button", { name: "Next" }));
-    expect(onPageChange).toHaveBeenCalledWith(1);
+    expect(onPageChange).toHaveBeenLastCalledWith(1);
+
+    await user.click(screen.getByRole("button", { name: "2" }));
+    expect(onPageChange).toHaveBeenLastCalledWith(1);
 
     rerender(
       createElement(Pagination, {
@@ -51,7 +52,24 @@ describe("Pagination", () => {
       })
     );
     await user.click(screen.getByRole("button", { name: "Previous" }));
-    expect(onPageChange).toHaveBeenCalledWith(0);
+    expect(onPageChange).toHaveBeenLastCalledWith(0);
+  });
+
+  it("applies the base and active/inactive classes to numbered page buttons", () => {
+    renderPagination({ results: makeResults({ nbPages: 5 }), currentPage: 1 });
+
+    const active = screen.getByRole("button", { name: "2" });
+    expect(active).toHaveClass("h-8", "w-8", "border", "text-xs", "font-medium", "border-hn/40", "bg-hn/15", "text-hn");
+
+    const inactive = screen.getByRole("button", { name: "1" });
+    expect(inactive).toHaveClass("h-8", "w-8", "border", "text-xs", "font-medium", "border-white/10", "bg-white/5", "text-slate-400");
+    expect(inactive).not.toHaveClass("border-hn/40");
+  });
+
+  it("computes the visible page window from the current page, not just its count", () => {
+    renderPagination({ results: makeResults({ nbPages: 20 }), currentPage: 19 });
+    const numbered = screen.getAllByRole("button", { name: /^\d+$/ }).map((button) => button.textContent);
+    expect(numbered).toEqual(["16", "17", "18", "19", "20"]);
   });
 
   it.each([6, 19])("keeps the current page visible beyond the first five pages (%s)", async (page) => {

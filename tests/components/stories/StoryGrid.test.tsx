@@ -20,7 +20,21 @@ describe("StoryGrid", () => {
     render(createElement(StoryGrid, { stories: [sampleStory], isLoading: true }));
     const grid = screen.getByText("Building in Japan").closest("[aria-busy]");
     expect(grid).toHaveAttribute("aria-busy", "true");
-    expect(grid).toHaveClass("opacity-60");
+    expect(grid).toHaveClass(
+      "grid",
+      "animate-fade-in",
+      "grid-cols-1",
+      "gap-4",
+      "transition-opacity",
+      "md:grid-cols-2",
+      "lg:grid-cols-3",
+      "opacity-60"
+    );
+  });
+
+  it("treats an unsaved story as unsaved when no savedIds are provided", () => {
+    render(createElement(StoryGrid, { stories: [sampleStory], isLoading: false, onToggleSave: vi.fn() }));
+    expect(screen.getByRole("button", { name: "Save story" })).toHaveAttribute("aria-pressed", "false");
   });
 
   it.each([

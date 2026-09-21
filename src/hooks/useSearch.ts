@@ -45,6 +45,8 @@ export function useSearch(
 
   // Results state
   const [results, setResults] = useState<AlgoliaResponse | null>(initialResults);
+  // Stryker disable next-line BooleanLiteral: every branch of the mount effect below calls
+  // setIsLoading explicitly before this default is ever observed by a flushed render.
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -80,6 +82,9 @@ export function useSearch(
     }
 
     const windowKey = CLIENT_SORTS.has(sortBy) ? searchWindowKey(current) : null;
+    // Stryker disable next-line ConditionalExpression: windowRef.current?.key is always a
+    // non-null string (or undefined), so it can never strictly equal a null windowKey; forcing
+    // this check to `true` cannot change which branch runs.
     if (windowKey !== null && windowRef.current?.key === windowKey) {
       setResults(pageSearchWindow(windowRef.current.data, page));
       setIsLoading(false);
@@ -121,16 +126,26 @@ export function useSearch(
   }, [query, debouncedQuery, storyType, dateRange, sortBy, page, initialResults, initialParams]);
 
   // Discrete changes (filters, page) get a history entry; typing is mirrored once it settles.
-  const navigate = useCallback((next: SearchParams) => {
-    queryDirtyRef.current = false;
-    setParams(next);
-    window.history.pushState(null, "", toSearchUrl(next));
-  }, []);
+  const navigate = useCallback(
+    (next: SearchParams) => {
+      queryDirtyRef.current = false;
+      setParams(next);
+      window.history.pushState(null, "", toSearchUrl(next));
+    },
+    // Stryker disable next-line ArrayDeclaration: the body closes over no outer values, so any
+    // constant dependency array (empty or not) memoizes this callback identically forever.
+    []
+  );
 
-  const setQuery = useCallback((query: string) => {
-    queryDirtyRef.current = true;
-    setParams((current) => ({ ...current, query, page: 0 }));
-  }, []);
+  const setQuery = useCallback(
+    (query: string) => {
+      queryDirtyRef.current = true;
+      setParams((current) => ({ ...current, query, page: 0 }));
+    },
+    // Stryker disable next-line ArrayDeclaration: the body closes over no outer values, so any
+    // constant dependency array (empty or not) memoizes this callback identically forever.
+    []
+  );
 
   // Any filter change resets to the first page.
   const applyFilterChange = useCallback(

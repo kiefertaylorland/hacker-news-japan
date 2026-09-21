@@ -109,6 +109,34 @@ describe("proxy", () => {
     expect(response.cookies.get("sb-token")?.value).toBe("rotated");
   });
 
+  it("forwards the request into the response even when no cookies are rotated", async () => {
+    // NextResponse.next({ request }) mirrors request.headers onto the response; this proves
+    // the initial `response` assignment passes `request`, not `{}`, even when setAll never runs.
+    mockedCreateServerClient.mockImplementation(() => ({
+      auth: { getClaims: vi.fn(async () => ({ data: null, error: null })) },
+    }) as never);
+
+    const response = await proxy(new NextRequest("http://localhost:3000/", { headers: { cookie: "existing=1" } }));
+
+    expect(response.headers.get("x-middleware-override-headers")).toContain("cookie");
+    expect(response.headers.get("x-middleware-request-cookie")).toContain("existing=1");
+  });
+
+  it("forwards the (possibly cookie-updated) request into the response", async () => {
+    // NextResponse.next({ request }) mirrors request.headers onto the response as
+    // x-middleware-request-* / x-middleware-override-headers; this proves both that
+    // `request` (not `{}`) was passed, and that the cookie mutation was applied to it.
+    mockedCreateServerClient.mockImplementation((_url, _key, options) => {
+      (options.cookies as CookieMethods).setAll([{ name: "sb-token", value: "rotated" }]);
+      return { auth: { getClaims: vi.fn(async () => ({ data: null, error: null })) } } as never;
+    });
+
+    const response = await proxy(new NextRequest("http://localhost:3000/", { headers: { cookie: "existing=1" } }));
+
+    expect(response.headers.get("x-middleware-override-headers")).toContain("cookie");
+    expect(response.headers.get("x-middleware-request-cookie")).toContain("sb-token=rotated");
+  });
+
   it("skips Next internals and static files but runs on pages", () => {
     // Next compiles the matcher with path-to-regexp; the pattern is a regex body it accepts as-is.
     const matcher = new RegExp(`^${config.matcher[0]}$`);

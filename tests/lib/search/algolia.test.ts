@@ -173,4 +173,12 @@ describe("sortHitsByStrategy", () => {
     sortHitsByStrategy(input, "points");
     expect(ids(input)).toEqual(["a", "b", "c"]);
   });
+
+  it("sorts strictly by points, not just by whether points are present", () => {
+    const low = makeStory({ objectID: "low", points: 5 });
+    const high = makeStory({ objectID: "high", points: 100 });
+    // Both permutations must land on the same, correct descending order.
+    expect(ids(sortHitsByStrategy([high, low], "points"))).toEqual(["high", "low"]);
+    expect(ids(sortHitsByStrategy([low, high], "points"))).toEqual(["high", "low"]);
+  });
 });

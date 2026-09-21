@@ -6,8 +6,8 @@ import type { AlgoliaResponse } from "@/lib/types";
 import { sampleResults } from "../fixtures/stories";
 import { renderServerPage } from "../helpers/renderServerPage";
 
-vi.mock("@/components/dashboard/Dashboard", () => ({
-  Dashboard: ({
+const dashboardMock = vi.fn(
+  ({
     authError,
     initialResults,
     savedIds,
@@ -22,7 +22,11 @@ vi.mock("@/components/dashboard/Dashboard", () => ({
       authError ? "Dashboard content (auth error)" : "Dashboard content",
       initialResults ? ` with ${initialResults.hits.length} stories` : " without stories",
       savedIds instanceof Promise ? " (bookmarks streaming)" : " (no bookmarks)"
-    ),
+    )
+);
+
+vi.mock("@/components/dashboard/Dashboard", () => ({
+  Dashboard: (props: never) => dashboardMock(props),
 }));
 
 vi.mock("@/components/dashboard/DashboardSkeleton", () => ({
@@ -51,6 +55,7 @@ import { getCachedStories } from "@/lib/search/cached";
 describe("app entry points", () => {
   beforeEach(() => {
     vi.mocked(getCachedStories).mockReset().mockResolvedValue(sampleResults);
+    dashboardMock.mockClear();
   });
 
   it("renders the home page with the current user's bookmarks and cached stories", async () => {
@@ -72,12 +77,16 @@ describe("app entry points", () => {
     expect(screen.getByText("Dashboard content with 1 stories (no bookmarks)")).toBeInTheDocument();
     expect(getBookmarkIds).not.toHaveBeenCalled();
     expect(getCachedStories).toHaveBeenCalledWith(expect.objectContaining({ query: "tokyo", page: 2 }));
+    // Anonymous visitors get an empty saved-ids array, not a pending bookmarks promise.
+    expect(dashboardMock.mock.calls[0][0].savedIds).toEqual([]);
   });
 
   it("falls back to client fetching when the cached story fetch fails", async () => {
     vi.mocked(getCachedStories).mockRejectedValueOnce(new Error("Algolia API error: 500"));
     await renderServerPage(Home({ searchParams: Promise.resolve({}) }));
     expect(screen.getByText(/^Dashboard content without stories/)).toBeInTheDocument();
+    // The Dashboard prop is explicitly null (not undefined) so it can fetch client-side.
+    expect(dashboardMock.mock.calls[0][0].initialResults).toBeNull();
   });
 
   it("passes a failed sign-in flag through to the dashboard", async () => {
