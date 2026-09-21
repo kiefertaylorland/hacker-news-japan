@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run --coverage",
     "cpd": "jscpd src tests",
+    "mutation": "stryker run",
     "prepare": "husky"
   },
   "dependencies": {
@@ -33,6 +34,8 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
+    "@stryker-mutator/core": "^10.0.0",
+    "@stryker-mutator/vitest-runner": "^10.0.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",

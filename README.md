@@ -64,10 +64,13 @@ npm run lint
 npm run typecheck
 npm test        # vitest with 100% coverage thresholds (shadcn ui/ excluded as vendor code)
 npm run cpd     # jscpd copy-paste detector, fails above 2.5% duplicated lines
+npm run mutation # StrykerJS mutation testing, fails below an 85% mutation score
 npm run build
 ```
 
-Lint, typecheck, tests, the duplication check, and a production build (`next build`) all run on every pull request via GitHub Actions; Vercel then performs its own build for each deployment.
+Lint, typecheck, tests, the duplication check, mutation testing, and a production build (`next build`) all run on every pull request via GitHub Actions; Vercel then performs its own build for each deployment.
+
+Coverage checks whether a line ran during tests; it doesn't check whether the test would catch a bug there. Mutation testing (via [StrykerJS](https://stryker-mutator.io/)) makes small deliberate changes ("mutants") to the source and reruns the tests — a mutant that survives means a real bug in that spot could survive too. The `mutation` script mutates everything under `src/` (excluding vendored `components/ui/`) and opens an HTML report at `reports/mutation/index.html`.
 
 ## Deploy
 

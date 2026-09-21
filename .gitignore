@@ -32,5 +32,10 @@ supabase/.temp/
 # jscpd
 .jscpd-report/
 
+# Stryker mutation testing
+reports/mutation/
+stryker-tmp/
+.stryker-tmp/
+
 # husky
 .husky/_
