@@ -74,6 +74,27 @@ describe("useSearch", () => {
     expect(result.current.error).toBeNull();
   });
 
+  it.each(["-1", "NaN"])("normalizes invalid page=%s URL params to the default page", async (page) => {
+    currentSearchParams = new URLSearchParams(`query=tokyo&page=${page}`);
+    mockedSearchStories.mockResolvedValue(response);
+
+    const { result } = renderHook(() => useSearch());
+
+    expect(result.current.page).toBe(0);
+    await waitFor(() =>
+      expect(mockedSearchStories).toHaveBeenCalledWith(
+        {
+          query: "tokyo",
+          storyType: "all",
+          dateRange: "all",
+          sortBy: "date_desc",
+          page: 0,
+        },
+        expect.any(AbortSignal)
+      )
+    );
+  });
+
   it("syncs state when the URL search params change externally", async () => {
     mockedSearchStories.mockResolvedValue(response);
     const { result, rerender } = renderHook(() => useSearch());

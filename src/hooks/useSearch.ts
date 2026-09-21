@@ -25,12 +25,13 @@ interface UseSearchReturn extends SearchParams {
 }
 
 function readSearchParams(searchParams: URLSearchParams): SearchParams {
+  const page = Number.parseInt(searchParams.get("page") || "", 10);
   return {
     query: searchParams.get("query") || DEFAULT_SEARCH_PARAMS.query,
     storyType: (searchParams.get("storyType") as StoryType) || DEFAULT_SEARCH_PARAMS.storyType,
     dateRange: (searchParams.get("dateRange") as DateRange) || DEFAULT_SEARCH_PARAMS.dateRange,
     sortBy: (searchParams.get("sortBy") as SortBy) || DEFAULT_SEARCH_PARAMS.sortBy,
-    page: parseInt(searchParams.get("page") || "0", 10),
+    page: Number.isNaN(page) || page < 0 ? DEFAULT_SEARCH_PARAMS.page : page,
   };
 }
 
