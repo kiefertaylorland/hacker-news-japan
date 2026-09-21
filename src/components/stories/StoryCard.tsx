@@ -129,7 +129,9 @@ export function StoryCard({ story, index = 0, isSaved = false, onToggleSave }: S
           <div className="flex-1" />
 
           <span className="min-w-0 max-w-full truncate text-xs text-slate-500">{story.author}</span>
-          <span className="shrink-0 text-xs text-slate-600">{formatRelativeTime(story.created_at)}</span>
+          <span suppressHydrationWarning className="shrink-0 text-xs text-slate-600">
+            {formatRelativeTime(story.created_at)}
+          </span>
           <ExternalLinkIcon className="h-3 w-3 flex-shrink-0 text-slate-500 transition-colors group-hover:text-hn" />
         </CardFooter>
       </Card>
