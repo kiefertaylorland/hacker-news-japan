@@ -23,7 +23,7 @@ describe("searchStories", () => {
 
       const result = await searchStories({ ...DEFAULT_SEARCH_PARAMS, query: "Japan", sortBy });
 
-      expect(buildSpy).toHaveBeenCalledWith("Japan", "all", "all", sortBy, 0);
+      expect(buildSpy).toHaveBeenCalledWith({ ...DEFAULT_SEARCH_PARAMS, query: "Japan", sortBy });
       expect(fetchSpy).toHaveBeenCalledWith("https://algolia.test", undefined);
       expect(sortSpy).toHaveBeenCalledWith(sampleHits, sortBy);
       expect(result.hits.map((hit) => hit.objectID)).toEqual(["2", "1"]);
@@ -49,7 +49,7 @@ describe("searchStories", () => {
 
     await expect(searchStories(DEFAULT_SEARCH_PARAMS, controller.signal)).rejects.toBe(abortError);
     expect(fetchSpy).toHaveBeenCalledWith(
-      algolia.buildAlgoliaURL("", "all", "all", "date_desc", 0),
+      algolia.buildAlgoliaURL(DEFAULT_SEARCH_PARAMS),
       controller.signal
     );
   });

@@ -5,11 +5,15 @@ import {
   getUnixTimestamp,
   sortHitsByStrategy,
 } from "@/lib/search/algolia";
-import { HITS_PER_PAGE } from "@/lib/constants";
-import type { SortBy } from "@/lib/types";
+import { DEFAULT_SEARCH_PARAMS, HITS_PER_PAGE } from "@/lib/constants";
+import type { SearchParams, SortBy } from "@/lib/types";
 import { makeStory } from "../../fixtures/stories";
 
 const NOW_MS = 1_700_000_000_000;
+
+function build(overrides: Partial<SearchParams> = {}) {
+  return buildAlgoliaURL({ ...DEFAULT_SEARCH_PARAMS, ...overrides });
+}
 const NOW_S = NOW_MS / 1000;
 
 const payload = { hits: [], nbHits: 0, nbPages: 0, page: 0, hitsPerPage: 30, query: "Japan" };
@@ -41,7 +45,7 @@ describe("getUnixTimestamp", () => {
 describe("buildAlgoliaURL", () => {
   it("builds the newest-first default search", () => {
     vi.spyOn(Date, "now").mockReturnValue(NOW_MS);
-    const url = new URL(buildAlgoliaURL("", "all", "all", "date_desc", 2));
+    const url = new URL(build({ page: 2 }));
     expect(url.pathname).toBe("/api/v1/search_by_date");
     expect(url.searchParams.get("query")).toBe("Japan");
     expect(url.searchParams.get("page")).toBe("2");
@@ -53,7 +57,7 @@ describe("buildAlgoliaURL", () => {
 
   it("builds a filtered relevance search", () => {
     vi.spyOn(Date, "now").mockReturnValue(NOW_MS);
-    const url = new URL(buildAlgoliaURL("economy", "job", "24h", "points", 1));
+    const url = new URL(build({ query: "economy", storyType: "job", dateRange: "24h", sortBy: "points", page: 1 }));
     expect(url.pathname).toBe("/api/v1/search");
     expect(url.searchParams.get("query")).toBe("Japan economy");
     expect(url.searchParams.get("tags")).toBe("job");
@@ -62,14 +66,14 @@ describe("buildAlgoliaURL", () => {
   });
 
   it("uses search_by_date only for date_desc sorting", () => {
-    expect(buildAlgoliaURL("", "all", "all", "date_desc", 0)).toContain("/search_by_date?");
+    expect(build()).toContain("/search_by_date?");
     for (const sort of ["relevance", "date_asc", "points", "comments"] as const) {
-      expect(buildAlgoliaURL("", "all", "all", sort, 0)).toContain("/search?");
+      expect(build({ sortBy: sort })).toContain("/search?");
     }
   });
 
   it("filters by a specific story type tag", () => {
-    const url = new URL(buildAlgoliaURL("", "show_hn", "all", "relevance", 0));
+    const url = new URL(build({ storyType: "show_hn", sortBy: "relevance" }));
     expect(url.searchParams.get("tags")).toBe("show_hn");
   });
 });
