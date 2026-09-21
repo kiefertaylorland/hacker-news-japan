@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --coverage"
+    "test": "vitest run --coverage",
+    "cpd": "jscpd src tests"
   },
   "dependencies": {
     "@radix-ui/react-select": "^2.2.6",
@@ -48,6 +49,7 @@
     "autoprefixer": "^10.4.0",
     "eslint": "^8.57.0",
     "eslint-config-next": "^15.1.0",
+    "jscpd": "^5.3.0",
     "jsdom": "^29.1.1",
     "postcss": "^8.5.23",
     "shadcn": "^4.9.0",
