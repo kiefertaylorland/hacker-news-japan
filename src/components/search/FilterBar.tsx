@@ -2,7 +2,7 @@
 
 import type { DateRange, StoryType } from "@/lib/types";
 import { STORY_TYPE_OPTIONS, DATE_RANGE_OPTIONS } from "@/lib/constants";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { OptionToggleGroup } from "./OptionToggleGroup";
 import {
   Select,
   SelectContent,
@@ -27,24 +27,14 @@ export function FilterBar({
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       {/* Story Type Filter */}
-      <ToggleGroup
-        type="single"
-        aria-label="Story type"
+      <OptionToggleGroup
+        options={STORY_TYPE_OPTIONS}
         value={storyType}
-        onValueChange={(value) => value && onStoryTypeChange(value as StoryType)}
-        className="flex-wrap justify-start gap-2"
-      >
-        {STORY_TYPE_OPTIONS.map((option) => (
-          <ToggleGroupItem
-            key={option.value}
-            value={option.value}
-            size="sm"
-            className="h-11 sm:h-9 rounded-lg border border-white/10 bg-white/5 px-3 text-xs font-medium text-slate-400 backdrop-blur-md transition-all hover:bg-white/[0.08] hover:text-slate-200 data-[state=on]:border-hn/40 data-[state=on]:bg-hn/15 data-[state=on]:text-hn data-[state=on]:shadow-[0_0_12px_rgba(255,102,0,0.15)]"
-          >
-            {option.label}
-          </ToggleGroupItem>
-        ))}
-      </ToggleGroup>
+        onChange={onStoryTypeChange}
+        ariaLabel="Story type"
+        size="md"
+        className="gap-2"
+      />
 
       {/* Date Range Filter */}
       <div className="flex items-center gap-2 text-xs">
