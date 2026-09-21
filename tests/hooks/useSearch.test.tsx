@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { createElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
+import { flushSync } from "react-dom";
+import { createRoot } from "react-dom/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useSearch } from "@/hooks/useSearch";
 import { fetchSearchWindow, pageSearchWindow, searchStories } from "@/lib/search/api";
@@ -54,10 +55,17 @@ describe("useSearch", () => {
     mockedFetchSearchWindow.mockReset();
   });
 
-  it("starts with isLoading=false on the initial render before effects run", () => {
-    expect(renderToStaticMarkup(createElement(InitialLoadingProbe))).toContain("false");
-    expect(mockedSearchStories).not.toHaveBeenCalled();
-    expect(mockedFetchSearchWindow).not.toHaveBeenCalled();
+  it("starts with isLoading=false on the initial client render before effects run", async () => {
+    const container = document.createElement("div");
+    const root = createRoot(container);
+
+    flushSync(() => {
+      root.render(createElement(InitialLoadingProbe));
+    });
+
+    expect(container.textContent).toBe("false");
+    await waitFor(() => expect(mockedSearchStories).toHaveBeenCalledTimes(1));
+    root.unmount();
   });
 
   it("reads initial URL params and fetches results", async () => {
