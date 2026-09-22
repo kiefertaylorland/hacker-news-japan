@@ -74,7 +74,7 @@ npm run typecheck
 npm test        # vitest with 100% coverage thresholds (shadcn ui/ excluded as vendor code)
 npm run cpd     # jscpd copy-paste detector, fails above 2.5% duplicated lines
 npm run knip    # unused files/exports/deps and imports of packages missing from package.json
-npm run mutation # StrykerJS mutation testing, fails below an 85% mutation score
+npm run mutation # StrykerJS mutation testing, fails below a 95% mutation score
 npm run mutation:diff # Stryker on only the src files changed vs origin/main (BASE=<branch> to override)
 npm run build
 
@@ -86,7 +86,7 @@ npm run test:integration  # Vitest against the local instance — proves RLS is 
 supabase stop
 ```
 
-Lint, typecheck, tests, the duplication check, knip, a production build (`next build`), and the pgTAP + integration database gates all run on every pull request via GitHub Actions; Vercel then performs its own build for each deployment. The full mutation run is not part of the automated CI gate (it's slow) — run it locally/on-demand with `npm run mutation`. PRs do run `mutation:diff`, which only mutates the files the PR touches.
+Lint, typecheck, tests, the duplication check, knip, a production build (`next build`), and the pgTAP + integration database gates all run on every pull request via GitHub Actions; Vercel then performs its own build for each deployment. The full mutation run is not part of the automated CI gate (it's slow) — run it locally/on-demand with `npm run mutation`. PRs do run `mutation:diff`, which only mutates the files the PR touches — each whole file, at the same 95% break threshold, so editing a file below that score means raising it.
 
 Coverage checks whether a line ran during tests; it doesn't check whether the test would catch a bug there. Mutation testing (via [StrykerJS](https://stryker-mutator.io/)) makes small deliberate changes ("mutants") to the source and reruns the tests — a mutant that survives means a real bug in that spot could survive too. The `mutation` script mutates everything under `src/` (excluding vendored `components/ui/`) and opens an HTML report at `reports/mutation/index.html`.
 
@@ -99,7 +99,7 @@ Much of this codebase is written with AI agents, so the gates are layered to cat
 | Layer | When it runs | What it catches |
 | --- | --- | --- |
 | `.claude/settings.json` PostToolUse hook (`scripts/claude/lint-edited.mjs`) | After every Claude Code edit to `src/` or `tests/` | Lint errors fed straight back to the agent, so `any`/`@ts-ignore`/`!` escape hatches get fixed in the loop |
-| `.claude/settings.json` Stop hook (`scripts/claude/stop-gate.mjs`) | When the agent tries to finish a turn that changed code | Runs `scripts/ci-local.sh --quick`; a red gate blocks the agent from reporting "done" |
+| `.claude/settings.json` Stop hook (`scripts/claude/stop-gate.mjs`) | When the agent tries to finish a turn that changed code | Runs `scripts/ci-local.sh --quick` when `src`/`tests`/`supabase`/`scripts` or lint/type config is dirty; a red gate blocks the first stop and feeds the failure back (a retried stop is let through to avoid an infinite loop) |
 | Husky `pre-commit` / `pre-push` | `git commit` / `git push` | Lint + typecheck before commit; full `npm run verify` before push |
 | knip (CI + `verify`) | Every PR | Dead code and hallucinated/undeclared dependencies |
 | `mutation:diff` (CI) | Every PR | Tests that reach 100% coverage without asserting anything on the changed code |

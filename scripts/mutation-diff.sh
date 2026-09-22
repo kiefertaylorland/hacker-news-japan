@@ -10,7 +10,7 @@ cd "$(git rev-parse --show-toplevel)"
 BASE="${BASE:-main}"
 
 # Same exclusions as the `mutate` globs in stryker.config.mjs.
-files=$(git diff --name-only --diff-filter=AM "origin/$BASE...HEAD" -- 'src/*.ts' 'src/*.tsx' \
+files=$(git diff --name-only --diff-filter=AMR "origin/$BASE...HEAD" -- 'src/*.ts' 'src/*.tsx' \
   | grep -v '\.d\.ts$' | grep -v '^src/components/ui/' || true)
 
 if [ -z "$files" ]; then

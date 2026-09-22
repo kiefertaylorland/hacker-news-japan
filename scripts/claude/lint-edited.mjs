@@ -17,6 +17,6 @@ if (!/^(src|tests)\/.*\.tsx?$/.test(rel)) process.exit(0);
 try {
   execFileSync("npx", ["eslint", rel], { cwd: root, encoding: "utf8", stdio: "pipe" });
 } catch (err) {
-  process.stderr.write(`ESLint errors in ${rel} — fix before continuing:\n${err.stdout || err.stderr}`);
+  process.stderr.write(`ESLint errors in ${rel} — fix before continuing:\n${err.stdout || err.stderr || err.message}`);
   process.exit(2);
 }

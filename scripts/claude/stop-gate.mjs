@@ -9,7 +9,14 @@ const input = JSON.parse(readFileSync(0, "utf8"));
 if (input.stop_hook_active) process.exit(0);
 
 const root = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
-const changed = execFileSync("git", ["status", "--porcelain", "--", "src", "tests", "supabase"], {
+// Code plus the config that can break lint/typecheck/knip. This is the dirty tree, not this
+// turn's edits: uncommitted changes re-trigger the gate every turn, and work committed
+// mid-turn skips it.
+const watched = [
+  "src", "tests", "supabase", "scripts",
+  "package.json", "package-lock.json", ".eslintrc.json", "knip.json", "tsconfig.json",
+];
+const changed = execFileSync("git", ["status", "--porcelain", "--", ...watched], {
   cwd: root,
   encoding: "utf8",
 });
