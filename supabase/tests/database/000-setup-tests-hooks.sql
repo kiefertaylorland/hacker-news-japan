@@ -86,9 +86,11 @@ end;
 $$;
 
 -- Once a test switches to `anon`/`authenticated`, it still needs to be able
--- to call back into `tests.*` (e.g. to switch users again, or clear auth).
+-- to switch users again or clear auth. Only those helpers are granted: the
+-- security-definer user factory stays callable by the test runner alone.
+revoke execute on function tests.create_supabase_user(text, text) from public, anon, authenticated;
 grant usage on schema tests to anon, authenticated;
-grant execute on all functions in schema tests to anon, authenticated;
+grant execute on function tests.authenticate_as(uuid), tests.clear_authentication() to anon, authenticated;
 
 select pass('pgtap test harness bootstrapped');
 

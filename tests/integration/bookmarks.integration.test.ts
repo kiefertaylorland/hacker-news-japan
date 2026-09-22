@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { getBookmarkIds, listBookmarks, setBookmark } from "@/lib/bookmarks/queries";
@@ -18,7 +18,7 @@ function actAs(client: SupabaseClient) {
 
 /** HN object ids are numeric strings; toHNStory derives story_id via Number(object_id). */
 function uniqueStory() {
-  const objectID = `${Date.now()}${Math.floor(Math.random() * 10_000)}`;
+  const objectID = String(Math.floor(Math.random() * Number.MAX_SAFE_INTEGER));
   return makeStory({ objectID, story_id: Number(objectID) });
 }
 
@@ -43,8 +43,12 @@ describe("bookmarks against a real local Supabase instance", () => {
     clientB = await clientAsUser(userB);
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await supabaseAdmin.from("bookmarks").delete().in("user_id", [userA.id, userB.id]);
+  });
+
+  // Deleting the users cascades to any remaining bookmarks (`on delete cascade`).
+  afterAll(async () => {
     await deleteTestUser(userA.id);
     await deleteTestUser(userB.id);
   });
