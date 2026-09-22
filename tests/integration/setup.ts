@@ -13,7 +13,7 @@ if (!url || !publishableKey || !serviceRoleKey) {
 // These tests create and delete real auth.users/bookmarks rows via a
 // service-role client. Never let that run against anything but a local
 // instance, however these env vars happen to get set.
-const isLocalUrl = /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?/.test(url);
+const isLocalUrl = /^https?:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?(?:\/|$)/.test(url);
 if (!isLocalUrl) {
   throw new Error(
     `Refusing to run integration tests against a non-local Supabase URL: ${url}`
