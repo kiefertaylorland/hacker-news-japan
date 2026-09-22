@@ -39,3 +39,6 @@ stryker-tmp/
 
 # husky
 .husky/_
+
+# Claude Code per-user settings
+.claude/settings.local.json
