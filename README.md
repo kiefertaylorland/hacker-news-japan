@@ -57,6 +57,14 @@ supabase link --project-ref <ref>
 supabase db push
 ```
 
+For local development and testing, start the full local stack (Postgres, Auth, PostgREST) with:
+
+```bash
+supabase start
+```
+
+Database-level tests live in `supabase/tests/database/` (pgTAP) and `tests/integration/` (Vitest against the real local instance) — see below.
+
 ## Quality Gates
 
 ```bash
@@ -66,11 +74,20 @@ npm test        # vitest with 100% coverage thresholds (shadcn ui/ excluded as v
 npm run cpd     # jscpd copy-paste detector, fails above 2.5% duplicated lines
 npm run mutation # StrykerJS mutation testing, fails below an 85% mutation score
 npm run build
+
+# Database-level gates (need a running local Supabase instance):
+supabase start
+supabase test db          # pgTAP: schema + RLS policy assertions (supabase/tests/database/)
+npm run test:integration  # Vitest against the local instance — proves RLS is enforced
+                           # through the real app code (src/lib/bookmarks, src/lib/auth), not just mocks
+supabase stop
 ```
 
-Lint, typecheck, tests, the duplication check, and a production build (`next build`) all run on every pull request via GitHub Actions; Vercel then performs its own build for each deployment. Mutation testing is not part of the automated CI gate (it's slow) — run it locally/on-demand with `npm run mutation`.
+Lint, typecheck, tests, the duplication check, a production build (`next build`), and the pgTAP + integration database gates all run on every pull request via GitHub Actions; Vercel then performs its own build for each deployment. Mutation testing is not part of the automated CI gate (it's slow) — run it locally/on-demand with `npm run mutation`.
 
 Coverage checks whether a line ran during tests; it doesn't check whether the test would catch a bug there. Mutation testing (via [StrykerJS](https://stryker-mutator.io/)) makes small deliberate changes ("mutants") to the source and reruns the tests — a mutant that survives means a real bug in that spot could survive too. The `mutation` script mutates everything under `src/` (excluding vendored `components/ui/`) and opens an HTML report at `reports/mutation/index.html`.
+
+The unit suite (`npm test`) mocks Supabase entirely, so it can't catch a weakened or missing RLS policy. Two layers close that gap: pgTAP tests in `supabase/tests/database/` assert the `bookmarks` policies directly at the SQL layer (impersonating `anon`/`authenticated` users via helpers in `000-setup-tests-hooks.sql`), and the integration suite in `tests/integration/` exercises `src/lib/bookmarks/*` and `src/lib/auth/user.ts` against that same real database. Both run in CI on every PR. Full browser/E2E testing (a real GitHub OAuth sign-in flow via Playwright) is intentionally out of scope for now.
 
 ## Deploy
 
