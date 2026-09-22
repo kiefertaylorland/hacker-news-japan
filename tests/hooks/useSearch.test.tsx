@@ -46,6 +46,66 @@ function InitialLoadingProbe() {
   return createElement("span", null, String(useSearch().isLoading));
 }
 
+type SearchState = ReturnType<typeof useSearch>;
+
+function renderWithResolvedResults() {
+  mockedSearchStories.mockResolvedValue(response);
+  return renderHook(() => useSearch());
+}
+
+function expectParamsState(
+  result: { current: SearchState },
+  params: Pick<SearchState, "query" | "storyType" | "dateRange" | "sortBy" | "page">
+) {
+  expect(result.current.query).toBe(params.query);
+  expect(result.current.storyType).toBe(params.storyType);
+  expect(result.current.dateRange).toBe(params.dateRange);
+  expect(result.current.sortBy).toBe(params.sortBy);
+  expect(result.current.page).toBe(params.page);
+}
+
+function expectSettledResults(result: { current: SearchState }, expected: SearchState["results"]) {
+  expect(result.current.results).toBe(expected);
+  expect(result.current.isLoading).toBe(false);
+}
+
+async function unmountWhilePending(
+  mockedFn: typeof mockedSearchStories | typeof mockedFetchSearchWindow,
+  pending: ReturnType<typeof deferredResponse>,
+  outcome: "success" | "failure"
+) {
+  const render = vi.fn(() => useSearch());
+  const { unmount } = renderHook(render);
+  const signal = mockedFn.mock.lastCall![1]!;
+  expect(signal.aborted).toBe(false);
+  unmount();
+  expect(signal.aborted).toBe(true);
+  const renderCount = render.mock.calls.length;
+
+  await act(async () => {
+    if (outcome === "success") pending.resolve(response);
+    else pending.reject(new Error("unmounted error"));
+  });
+  expect(render).toHaveBeenCalledTimes(renderCount);
+  expect(mockedFn).toHaveBeenCalledTimes(1);
+}
+
+async function renderWithSettledResultsThenFakeTimers() {
+  vi.useRealTimers();
+  mockedSearchStories.mockResolvedValue(response);
+  const { result, rerender } = renderHook(() => useSearch());
+  await waitFor(() => expect(result.current.results).toEqual(response));
+  vi.useFakeTimers();
+  return { result, rerender };
+}
+
+async function renderSeededAndGoToPage1(paged: AlgoliaResponse) {
+  const { result } = renderHook(() => useSearch(response));
+  await act(async () => result.current.setPage(1));
+  await waitFor(() => expect(result.current.results).toBe(paged));
+  return result;
+}
+
 describe("useSearch", () => {
   beforeEach(() => {
     currentSearchParams = new URLSearchParams();
@@ -76,11 +136,7 @@ describe("useSearch", () => {
 
     const { result } = renderHook(() => useSearch());
 
-    expect(result.current.query).toBe("tokyo");
-    expect(result.current.storyType).toBe("job");
-    expect(result.current.dateRange).toBe("week");
-    expect(result.current.sortBy).toBe("points");
-    expect(result.current.page).toBe(2);
+    expectParamsState(result, { query: "tokyo", storyType: "job", dateRange: "week", sortBy: "points", page: 2 });
 
     await waitFor(() =>
       expect(mockedFetchSearchWindow).toHaveBeenCalledWith({
@@ -120,8 +176,7 @@ describe("useSearch", () => {
   });
 
   it("syncs state when the URL search params change externally", async () => {
-    mockedSearchStories.mockResolvedValue(response);
-    const { result, rerender } = renderHook(() => useSearch());
+    const { result, rerender } = renderWithResolvedResults();
 
     await waitFor(() => expect(mockedSearchStories).toHaveBeenCalledTimes(1));
 
@@ -130,13 +185,9 @@ describe("useSearch", () => {
     );
     rerender();
 
-    await waitFor(() => {
-      expect(result.current.query).toBe("tokyo");
-      expect(result.current.storyType).toBe("job");
-      expect(result.current.dateRange).toBe("week");
-      expect(result.current.sortBy).toBe("points");
-      expect(result.current.page).toBe(2);
-    });
+    await waitFor(() =>
+      expectParamsState(result, { query: "tokyo", storyType: "job", dateRange: "week", sortBy: "points", page: 2 })
+    );
   });
 
   it.each([
@@ -156,9 +207,7 @@ describe("useSearch", () => {
     currentSearchParams = new URLSearchParams(
       "query=kyoto&storyType=story&dateRange=all&sortBy=date_desc&page=3"
     );
-    mockedSearchStories.mockResolvedValue(response);
-
-    const { result } = renderHook(() => useSearch());
+    const { result } = renderWithResolvedResults();
 
     await waitFor(() => expect(mockedSearchStories).toHaveBeenCalledTimes(1));
 
@@ -210,8 +259,7 @@ describe("useSearch", () => {
   });
 
   it("does not refetch when the URL catches up with the state it produced", async () => {
-    mockedSearchStories.mockResolvedValue(response);
-    const { result, rerender } = renderHook(() => useSearch());
+    const { result, rerender } = renderWithResolvedResults();
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     await act(async () => result.current.setStoryType("job"));
@@ -258,8 +306,7 @@ describe("useSearch", () => {
   });
 
   it("aborts requests when each filter or page changes", async () => {
-    mockedSearchStories.mockResolvedValue(response);
-    const { result } = renderHook(() => useSearch());
+    const { result } = renderWithResolvedResults();
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(mockedSearchStories).toHaveBeenCalledWith(
       { query: "", storyType: "all", dateRange: "all", sortBy: "date_desc", page: 0 },
@@ -339,20 +386,7 @@ describe("useSearch", () => {
     async (outcome) => {
       const pending = deferredResponse();
       mockedSearchStories.mockReturnValue(pending.promise);
-      const render = vi.fn(() => useSearch());
-      const { unmount } = renderHook(render);
-      const signal = mockedSearchStories.mock.lastCall![1]!;
-      expect(signal.aborted).toBe(false);
-      unmount();
-      expect(signal.aborted).toBe(true);
-      const renderCount = render.mock.calls.length;
-
-      await act(async () => {
-        if (outcome === "success") pending.resolve(response);
-        else pending.reject(new Error("unmounted error"));
-      });
-      expect(render).toHaveBeenCalledTimes(renderCount);
-      expect(mockedSearchStories).toHaveBeenCalledTimes(1);
+      await unmountWhilePending(mockedSearchStories, pending, outcome);
     }
   );
 
@@ -362,20 +396,7 @@ describe("useSearch", () => {
       currentSearchParams = new URLSearchParams("sortBy=comments");
       const pending = deferredResponse();
       mockedFetchSearchWindow.mockReturnValue(pending.promise);
-      const render = vi.fn(() => useSearch());
-      const { unmount } = renderHook(render);
-      const signal = mockedFetchSearchWindow.mock.lastCall![1]!;
-      expect(signal.aborted).toBe(false);
-      unmount();
-      expect(signal.aborted).toBe(true);
-      const renderCount = render.mock.calls.length;
-
-      await act(async () => {
-        if (outcome === "success") pending.resolve(response);
-        else pending.reject(new Error("unmounted error"));
-      });
-      expect(render).toHaveBeenCalledTimes(renderCount);
-      expect(mockedFetchSearchWindow).toHaveBeenCalledTimes(1);
+      await unmountWhilePending(mockedFetchSearchWindow, pending, outcome);
     }
   );
 
@@ -415,8 +436,7 @@ describe("useSearch", () => {
       { query: "osaka", storyType: "job", dateRange: "all", sortBy: "date_desc", page: 0 },
       expect.any(AbortSignal)
     );
-    expect(result.current.results).toBe(response);
-    expect(result.current.isLoading).toBe(false);
+    expectSettledResults(result, response);
     // The filter click already wrote the typed query to the URL.
     expect(replaceState).not.toHaveBeenCalled();
   });
@@ -444,13 +464,8 @@ describe("useSearch", () => {
   });
 
   it("keeps previous results visible while a new query is debouncing, then syncs the URL once", async () => {
-    vi.useRealTimers();
-    mockedSearchStories.mockResolvedValue(response);
-    const { result } = renderHook(() => useSearch());
+    const { result } = await renderWithSettledResultsThenFakeTimers();
 
-    await waitFor(() => expect(result.current.results).toEqual(response));
-
-    vi.useFakeTimers();
     act(() => result.current.setQuery("os"));
     act(() => result.current.setQuery("osa"));
     act(() => result.current.setQuery("osaka"));
@@ -489,10 +504,7 @@ describe("useSearch", () => {
   it("clears an existing error when returning to the seeded server params", async () => {
     const paged = { ...response, page: 1 };
     mockedSearchStories.mockResolvedValueOnce(paged).mockRejectedValueOnce(new Error("boom"));
-    const { result } = renderHook(() => useSearch(response));
-
-    await act(async () => result.current.setPage(1));
-    await waitFor(() => expect(result.current.results).toBe(paged));
+    const result = await renderSeededAndGoToPage1(paged);
 
     await act(async () => result.current.setPage(2));
     await waitFor(() => expect(result.current.error).toBe("boom"));
@@ -539,12 +551,8 @@ describe("useSearch", () => {
   });
 
   it("does not repeat replaceState after the debounced query has already synced the URL", async () => {
-    vi.useRealTimers();
-    mockedSearchStories.mockResolvedValue(response);
-    const { result, rerender } = renderHook(() => useSearch());
-    await waitFor(() => expect(result.current.results).toEqual(response));
+    const { result, rerender } = await renderWithSettledResultsThenFakeTimers();
 
-    vi.useFakeTimers();
     act(() => result.current.setQuery("osaka"));
     await act(async () => vi.advanceTimersByTime(300));
     expect(replaceState).toHaveBeenCalledTimes(1);
@@ -588,8 +596,7 @@ describe("useSearch", () => {
     it("seeds results and skips the mount fetch", async () => {
       const { result } = renderHook(() => useSearch(response));
 
-      expect(result.current.results).toBe(response);
-      expect(result.current.isLoading).toBe(false);
+      expectSettledResults(result, response);
       expect(result.current.error).toBeNull();
       await waitFor(() => expect(result.current.results).toBe(response));
       expect(mockedSearchStories).not.toHaveBeenCalled();
@@ -598,15 +605,11 @@ describe("useSearch", () => {
     it("fetches after a change and restores the seed when returning to the initial params", async () => {
       const paged = { ...response, page: 1 };
       mockedSearchStories.mockResolvedValue(paged);
-      const { result } = renderHook(() => useSearch(response));
-
-      await act(async () => result.current.setPage(1));
-      await waitFor(() => expect(result.current.results).toBe(paged));
+      const result = await renderSeededAndGoToPage1(paged);
       expect(mockedSearchStories).toHaveBeenCalledTimes(1);
 
       await act(async () => result.current.setPage(0));
-      expect(result.current.results).toBe(response);
-      expect(result.current.isLoading).toBe(false);
+      expectSettledResults(result, response);
       expect(mockedSearchStories).toHaveBeenCalledTimes(1);
     });
 
