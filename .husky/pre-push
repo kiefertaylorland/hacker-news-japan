@@ -1,1 +1,1 @@
-npm test && npm run cpd
+npm run verify

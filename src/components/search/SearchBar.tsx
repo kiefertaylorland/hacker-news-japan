@@ -45,7 +45,7 @@ export function SearchBar({
             aria-label="Clear search"
             onClick={() => {
               onChange("");
-              inputRef.current!.focus();
+              inputRef.current?.focus();
             }}
             className="size-11 sm:size-6 text-slate-400 hover:bg-white/10 hover:text-slate-100"
           >

@@ -1,0 +1,28 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/scripts/claude/lint-edited.mjs\"",
+            "statusMessage": "Linting edited file..."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/scripts/claude/stop-gate.mjs\"",
+            "statusMessage": "Running verification gate...",
+            "timeout": 600
+          }
+        ]
+      }
+    ]
+  }
+}

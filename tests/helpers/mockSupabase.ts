@@ -17,7 +17,7 @@ export function mockQueryBuilder(result: QueryResult) {
 }
 
 /** Supabase auth client surface used by lib/auth and the auth actions/routes. */
-export function mockAuthClient() {
+function mockAuthClient() {
   return {
     getClaims: vi.fn(),
     signInWithOAuth: vi.fn(),
