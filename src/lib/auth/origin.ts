@@ -19,7 +19,8 @@ export async function getRequestOrigin(): Promise<string> {
 export function resolveRedirectOrigin(requestHeaders: HeaderReader, fallbackOrigin: string): string {
   const forwardedHost = requestHeaders.get("x-forwarded-host");
   if (forwardedHost && process.env.NODE_ENV !== "development") {
-    return `https://${forwardedHost}`;
+    const proto = requestHeaders.get("x-forwarded-proto") ?? "https";
+    return `${proto}://${forwardedHost}`;
   }
   return fallbackOrigin;
 }

@@ -53,6 +53,11 @@ describe("resolveRedirectOrigin", () => {
     expect(resolveRedirectOrigin(proxied, fallback)).toBe("https://hnj.vercel.app");
   });
 
+  it("keeps a plain-http forwarded proto (e.g. `next start` on localhost)", () => {
+    const local = new Headers({ "x-forwarded-host": "localhost:3000", "x-forwarded-proto": "http" });
+    expect(resolveRedirectOrigin(local, fallback)).toBe("http://localhost:3000");
+  });
+
   it("ignores the forwarded host in development", () => {
     vi.stubEnv("NODE_ENV", "development");
     expect(resolveRedirectOrigin(proxied, fallback)).toBe(fallback);
