@@ -1,16 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { GET as callback } from "@/app/auth/callback/route";
 import { createClient } from "@/lib/supabase/server";
-import { mockAuthClient } from "../helpers/mockSupabase";
+import { withMockedAuthClient } from "../helpers/mockSupabase";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 
-const auth = mockAuthClient();
-
-beforeEach(() => {
-  auth.exchangeCodeForSession.mockReset();
-  vi.mocked(createClient).mockResolvedValue({ auth } as never);
-});
+const auth = withMockedAuthClient(vi.mocked(createClient));
 
 describe("auth callback route", () => {
   it("exchanges the code and redirects to the requested path", async () => {

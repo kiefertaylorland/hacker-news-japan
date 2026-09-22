@@ -8,6 +8,13 @@ function advance(ms: number) {
   });
 }
 
+function expectSettlesAt(result: { current: string }, before: string, after: string) {
+  advance(299);
+  expect(result.current).toBe(before);
+  advance(1);
+  expect(result.current).toBe(after);
+}
+
 describe("useDebounce", () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -27,10 +34,7 @@ describe("useDebounce", () => {
     rerender({ value: "osaka", delay: 300 });
     expect(result.current).toBe("tokyo");
 
-    advance(299);
-    expect(result.current).toBe("tokyo");
-    advance(1);
-    expect(result.current).toBe("osaka");
+    expectSettlesAt(result, "tokyo", "osaka");
   });
 
   it("cancels stale debounce timers on rerender", () => {
@@ -43,9 +47,6 @@ describe("useDebounce", () => {
     advance(150);
     rerender({ value: "nagoya" });
 
-    advance(299);
-    expect(result.current).toBe("tokyo");
-    advance(1);
-    expect(result.current).toBe("nagoya");
+    expectSettlesAt(result, "tokyo", "nagoya");
   });
 });

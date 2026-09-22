@@ -25,11 +25,14 @@ type CookieMethods = {
   setAll: (cookies: { name: string; value: string; options?: Record<string, unknown> }[]) => void;
 };
 
-function captureCookieMethods(): { getClaims: ReturnType<typeof vi.fn>; methods: () => CookieMethods } {
+function captureCookieMethods(
+  onCookies?: (methods: CookieMethods) => void
+): { getClaims: ReturnType<typeof vi.fn>; methods: () => CookieMethods } {
   const getClaims = vi.fn(async () => ({ data: null, error: null }));
   let captured: CookieMethods | undefined;
   mockedCreateServerClient.mockImplementation((_url, _key, options) => {
     captured = options.cookies as CookieMethods;
+    onCookies?.(captured);
     return { auth: { getClaims } } as never;
   });
   return { getClaims, methods: () => captured as CookieMethods };
@@ -112,9 +115,7 @@ describe("proxy", () => {
   it("forwards the request into the response even when no cookies are rotated", async () => {
     // NextResponse.next({ request }) mirrors request.headers onto the response; this proves
     // the initial `response` assignment passes `request`, not `{}`, even when setAll never runs.
-    mockedCreateServerClient.mockImplementation(() => ({
-      auth: { getClaims: vi.fn(async () => ({ data: null, error: null })) },
-    }) as never);
+    captureCookieMethods();
 
     const response = await proxy(new NextRequest("http://localhost:3000/", { headers: { cookie: "existing=1" } }));
 
@@ -126,10 +127,7 @@ describe("proxy", () => {
     // NextResponse.next({ request }) mirrors request.headers onto the response as
     // x-middleware-request-* / x-middleware-override-headers; this proves both that
     // `request` (not `{}`) was passed, and that the cookie mutation was applied to it.
-    mockedCreateServerClient.mockImplementation((_url, _key, options) => {
-      (options.cookies as CookieMethods).setAll([{ name: "sb-token", value: "rotated" }]);
-      return { auth: { getClaims: vi.fn(async () => ({ data: null, error: null })) } } as never;
-    });
+    captureCookieMethods((cookies) => cookies.setAll([{ name: "sb-token", value: "rotated" }]));
 
     const response = await proxy(new NextRequest("http://localhost:3000/", { headers: { cookie: "existing=1" } }));
 
