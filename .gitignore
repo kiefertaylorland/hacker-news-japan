@@ -42,3 +42,8 @@ stryker-tmp/
 
 # Claude Code per-user settings
 .claude/settings.local.json
+
+# Playwright E2E
+tests/e2e/.auth/
+playwright-report/
+test-results/

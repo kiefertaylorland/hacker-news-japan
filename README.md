@@ -84,13 +84,19 @@ supabase test db          # pgTAP: schema + RLS policy assertions (supabase/test
 npm run test:integration  # Vitest against the local instance — proves RLS is enforced
                            # through the real app code (src/lib/bookmarks, src/lib/auth), not just mocks
 supabase stop
+
+# Browser E2E (needs Docker; starts its own Supabase stack, app build and fake GitHub):
+npx playwright install chromium  # once
+npm run test:e2e
 ```
 
 Lint, typecheck, tests, the duplication check, knip, a production build (`next build`), and the pgTAP + integration database gates all run on every pull request via GitHub Actions; Vercel then performs its own build for each deployment. The full mutation run is not part of the automated CI gate (it's slow) — run it locally/on-demand with `npm run mutation`. PRs do run `mutation:diff`, which only mutates the files the PR touches — each whole file, at the same 95% break threshold, so editing a file below that score means raising it.
 
 Coverage checks whether a line ran during tests; it doesn't check whether the test would catch a bug there. Mutation testing (via [StrykerJS](https://stryker-mutator.io/)) makes small deliberate changes ("mutants") to the source and reruns the tests — a mutant that survives means a real bug in that spot could survive too. The `mutation` script mutates everything under `src/` (excluding vendored `components/ui/`) and opens an HTML report at `reports/mutation/index.html`.
 
-The unit suite (`npm test`) mocks Supabase entirely, so it can't catch a weakened or missing RLS policy. Two layers close that gap: pgTAP tests in `supabase/tests/database/` assert the `bookmarks` policies directly at the SQL layer (impersonating `anon`/`authenticated` users via helpers in `000-setup-tests-hooks.sql`), and the integration suite in `tests/integration/` exercises `src/lib/bookmarks/*` and `src/lib/auth/user.ts` against that same real database. Both run in CI on every PR. Full browser/E2E testing (a real GitHub OAuth sign-in flow via Playwright) is intentionally out of scope for now.
+The unit suite (`npm test`) mocks Supabase entirely, so it can't catch a weakened or missing RLS policy. Two layers close that gap: pgTAP tests in `supabase/tests/database/` assert the `bookmarks` policies directly at the SQL layer (impersonating `anon`/`authenticated` users via helpers in `000-setup-tests-hooks.sql`), and the integration suite in `tests/integration/` exercises `src/lib/bookmarks/*` and `src/lib/auth/user.ts` against that same real database. Both run in CI on every PR.
+
+On top of those, a Playwright suite in `tests/e2e/` drives a real browser through a production build (`next start`): GitHub sign-in, sign-out, and save → `/saved` → unsave. Only github.com is faked. `scripts/e2e.sh` points local Supabase's GitHub provider at `tests/e2e/fake-github/server.mts` (through the CLI's `SUPABASE_AUTH_EXTERNAL_GITHUB_URL` override; `config.toml` stays unchanged). Everything else is real: the sign-in server action, the Supabase authorize redirect, PKCE, the code exchange, `/auth/callback`, and RLS. One setup step signs in and saves the browser state that the bookmark spec starts from. Home-page stories come from the live Algolia API. The `E2E` workflow runs nightly, on demand, and as a non-required check on PRs that touch auth/bookmark code.
 
 ### Verifying AI-generated code
 

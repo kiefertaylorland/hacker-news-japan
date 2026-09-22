@@ -2,5 +2,6 @@
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "project": ["src/**/*.{ts,tsx,css}", "tests/**/*.{ts,tsx}"],
   "ignore": ["src/components/ui/**"],
-  "ignoreDependencies": ["shadcn", "@stryker-mutator/api"]
+  "ignoreDependencies": ["shadcn", "@stryker-mutator/api"],
+  "playwright": { "entry": ["tests/e2e/**/*.@(spec|setup).ts"] }
 }
