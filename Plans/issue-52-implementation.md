@@ -14,5 +14,5 @@ Add failing flat-config and lint-rule regression tests. Upgrade ESLint to suppor
 - Red: the new flat-config acceptance test failed before migration; the legacy rule fixtures passed.
 - Green: 225 tests pass with 100% statements, branches, functions and lines.
 - `npm run verify` passes (lint, typecheck, coverage, duplication, knip, production build).
-- `npm ci --dry-run --ignore-scripts` succeeds. Next 16.3.4's legacy React/import/accessibility plugins still declare ESLint 9 peers, so npm emits warnings; the official `@eslint/compat` adapter preserves runtime compatibility with supported ESLint 10.
+- `npm ci --dry-run --ignore-scripts` succeeds. Next 16.3.4's legacy React/import/accessibility plugins still declare ESLint 9 peers. An explicit ESLint override and the official `@eslint/compat` adapter preserve compatibility with supported ESLint 10; `npm ls eslint` succeeds with every package deduplicated to 10.11.0.
 - A file-scoped override retains the existing URL/loading synchronization effects in `useSearch.ts`; all original TypeScript restrictions remain enabled.
