@@ -12,8 +12,11 @@ Write failing tests for internal discussion links, nested HN comments, local com
 ## Results
 
 - Red: discussion query, UI and page tests failed before their implementation; the database acceptance test failed before the comments table existed.
-- Green: all 242 unit/component tests pass with 100% statements, branches, functions and lines. `npm run verify` passes, including production build.
+- Green: all 251 unit/component tests pass with 100% statements, branches, functions and lines. `npm run verify` passes, including production build.
 - Real local Supabase: all 7 integration tests pass; all 28 pgTAP assertions pass, including 8 comment authorization/schema assertions.
 - Chromium end-to-end: internal comment-icon navigation, authenticated posting, rendered comment, and persistence after reload pass against a production build and real local Supabase.
 - HN HTML is sanitized with a limited tag/attribute/scheme allowlist; local comments render as plain text. Existing GitHub authentication supplies the posting user.
 - This PR stores comments in Hacker News Japan, not in upstream Hacker News. Apply the included database migration before deploying the application.
+
+- Follow-up verification strengthens database query-contract, input-boundary, sanitization and feedback tests. Coverage reports use a worktree-specific directory so concurrent worktrees cannot overwrite each other. The existing bookmark browser test waits for the save response before navigation.
+- Updated remote CI passes lint/build/100% coverage, database tests, browser tests and mutation testing (100% mutation score).
