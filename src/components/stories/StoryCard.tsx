@@ -8,12 +8,12 @@ import {
   BookmarkCheckIcon,
   BookmarkIcon,
   ExternalLinkIcon,
-  TrendingUpIcon,
   MessageCircleIcon,
 } from "lucide-react";
 import { Card, CardHeader, CardFooter, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { VoteButton } from "@/components/votes/VoteButton";
 import { Separator } from "@/components/ui/separator";
 
 interface StoryCardProps {
@@ -114,10 +114,7 @@ export const StoryCard = memo(function StoryCard({ story, isSaved = false, onTog
 
         {/* Collapsed Footer */}
         <CardFooter className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 text-xs text-slate-400">
-          <div className="flex shrink-0 items-center gap-1.5">
-            <TrendingUpIcon className="h-3.5 w-3.5 text-hn" />
-            <span className="font-medium tabular-nums">{story.points ?? 0}</span>
-          </div>
+          <VoteButton storyId={story.objectID} points={story.points} />
 
           <div className="flex shrink-0 items-center gap-1.5">
             <MessageCircleIcon className="h-3.5 w-3.5 text-slate-500" />
