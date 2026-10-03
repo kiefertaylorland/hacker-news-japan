@@ -8,6 +8,6 @@ alter table public.votes enable row level security;
 revoke all on public.votes from anon, authenticated;
 grant select on public.votes to anon, authenticated;
 grant insert on public.votes to authenticated;
-create policy votes_read on public.votes for select to anon, authenticated using (true);
+create policy votes_read_own on public.votes for select to anon, authenticated using ((select auth.uid()) = user_id);
 create policy votes_insert_own on public.votes for insert to authenticated with check ((select auth.uid()) = user_id);
 create index votes_story_idx on public.votes (story_id);
