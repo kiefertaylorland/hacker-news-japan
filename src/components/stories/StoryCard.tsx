@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { memo } from "react";
 import { cn, formatRelativeTime } from "@/lib/utils";
 import { getDomain, getStoryUrl, hnItemUrl } from "@/lib/url";
@@ -119,10 +120,10 @@ export const StoryCard = memo(function StoryCard({ story, isSaved = false, onTog
             <span className="font-medium tabular-nums">{story.points ?? 0}</span>
           </div>
 
-          <div className="flex shrink-0 items-center gap-1.5">
+          <Link href={`/stories/${story.objectID}`} aria-label={`${story.num_comments ?? 0} comments`} className="flex shrink-0 items-center gap-1.5 hover:text-hn">
             <MessageCircleIcon className="h-3.5 w-3.5 text-slate-500" />
             <span className="font-medium tabular-nums">{story.num_comments ?? 0}</span>
-          </div>
+          </Link>
 
           <div className="flex-1" />
 
