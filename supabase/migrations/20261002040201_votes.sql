@@ -11,3 +11,27 @@ grant insert on public.votes to authenticated;
 create policy votes_read_own on public.votes for select to anon, authenticated using ((select auth.uid()) = user_id);
 create policy votes_insert_own on public.votes for insert to authenticated with check ((select auth.uid()) = user_id);
 create index votes_story_idx on public.votes (story_id);
+
+-- Counts are public, but individual voters remain private. Only this aggregate
+-- needs elevated access; the Data API entry point itself is security invoker.
+create schema if not exists private;
+grant usage on schema private to anon, authenticated;
+create function private.story_vote_count(requested_story_id text)
+returns bigint
+language sql stable security definer
+set search_path = ''
+as $$
+  select count(*) from public.votes where story_id = requested_story_id;
+$$;
+revoke all on function private.story_vote_count(text) from public;
+grant execute on function private.story_vote_count(text) to anon, authenticated;
+
+create function public.story_vote_count(requested_story_id text)
+returns bigint
+language sql stable security invoker
+set search_path = ''
+as $$
+  select private.story_vote_count(requested_story_id);
+$$;
+revoke all on function public.story_vote_count(text) from public;
+grant execute on function public.story_vote_count(text) to anon, authenticated;
