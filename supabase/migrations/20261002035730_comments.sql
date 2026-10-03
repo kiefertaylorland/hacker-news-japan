@@ -14,13 +14,8 @@ create policy comments_read on public.comments for select to anon, authenticated
 create policy comments_insert_own on public.comments
   for insert
   to authenticated
-  with check (
-    (select auth.uid()) = user_id
-    and author = (
-      select p.display_name
-      from public.profiles p
-      where p.id = (select auth.uid())
-    )
-  );
+  -- Identity is the authenticated user id; author is a display-name snapshot
+  -- supplied by the app, which has no profiles table.
+  with check ((select auth.uid()) = user_id);
 create index comments_story_created_idx on public.comments (story_id, created_at);
 create index comments_user_idx on public.comments (user_id);
