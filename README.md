@@ -65,6 +65,29 @@ supabase start
 
 Database-level tests live in `supabase/tests/database/` (pgTAP) and `tests/integration/` (Vitest against the real local instance) — see below.
 
+### Automatic hosted migrations
+
+`Database Migrations` reconciles committed SQL with the hosted database after the `checks` and `db-tests` jobs pass on a push to `main`. It also runs daily and can be run manually from the Actions tab on `main`. All hosted runs are serialized; a running SQL deployment is allowed to finish.
+
+Each run replays the checkout's migrations and pgTAP tests on a disposable local stack, checks hosted migration history, previews and applies pending migrations with `supabase db push --include-all --skip-vault`, checks history again, and fails on database lint errors. Missing older versions are included. Seeds, vault updates, database resets, and automatic migration-history repairs are excluded from hosted deployment.
+
+Configure these in **GitHub → Settings → Environments → Production** before merging this automation:
+
+| Setting | Kind | Purpose |
+| --- | --- | --- |
+| `SUPABASE_ACCESS_TOKEN` | Secret | Supabase personal access token for the project owner/deployment identity |
+| `SUPABASE_DB_PASSWORD` | Secret | Hosted project's Postgres password |
+| `SUPABASE_PROJECT_ID` | Variable, optional | Defaults to `yovbadgitdtbmomeuotz`; override for a different production project |
+| `VERCEL_DEPLOY_HOOK` | Secret, recommended | Vercel deploy-hook URL configured for this project's `main` branch |
+
+Create the deploy hook in **Vercel → Project Settings → Git → Deploy Hooks**. After successful migration verification, the workflow requests a rebuild on main pushes/manual runs, and on daily runs that applied migrations. This resolves the race with Vercel's Git-triggered build: an early build can fail the schema gate while CI is still applying migrations, then the hook rebuilds against the verified database. Without the hook, migration deployment still works, but a blocked Vercel deployment needs a manual redeploy. Keep the Vercel schema prebuild check from the feature PRs enabled.
+
+The job does not run hosted SQL from pull requests or from manual runs on other branches. PR CI still replays SQL and exercises RLS locally. Use an isolated Supabase preview/staging project when testing unmerged schema changes; the shared Production job deploys only main's reviewed checkout.
+
+**Initial rollout:** merge PRs #57 and #58 before this automation. Their comments/votes migrations have already been applied to the hosted database but are not yet in `main`. Remote versions missing from the checkout cause an explicit failure before SQL is pushed. This prevents an old checkout from rewriting or incorrectly repairing newer history.
+
+Add a new migration for every schema change; do not edit an applied migration. A green history check verifies recorded migration versions, not every possible manual schema/data change. Invalid credentials, network outages, inconsistent history, SQL errors, and lint failures make the run red rather than reporting success. The workflow cannot guarantee that manual changes or outages never occur; the migration job and deployment schema gate make those failures visible and prevent a missing schema from silently publishing.
+
 ## Quality Gates
 
 ```bash

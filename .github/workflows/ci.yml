@@ -75,3 +75,10 @@ jobs:
       - run: npm run mutation:diff
         env:
           BASE: ${{ github.base_ref }}
+
+  deploy-migrations:
+    # PR code is tested locally; only successful main CI can change the shared DB.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [checks, db-tests]
+    uses: ./.github/workflows/database-migrations.yml
+    secrets: inherit
