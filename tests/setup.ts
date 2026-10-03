@@ -67,3 +67,9 @@ if (!window.HTMLElement.prototype.releasePointerCapture) {
 
 vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
 vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test");
+
+// Isolate unrelated component tests from HTTP reads and vote writes.
+vi.mock("@/lib/votes/client", () => ({
+  loadVote: vi.fn(async () => ({ count: 0, voted: false })),
+}));
+vi.mock("@/lib/votes/actions", () => ({ upvote: vi.fn(async () => ({})) }));

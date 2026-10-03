@@ -13,7 +13,12 @@ test("save a story, see it on /saved, then unsave it", async ({ page }) => {
   // Keyed by title: the "Save story" button this card was found by goes away once clicked.
   const card = page.locator("div.group", { hasText: title }).first();
 
+  // The selected icon is optimistic; wait for persistence before navigating away.
+  const saved = page.waitForResponse((response) =>
+    response.request().method() === "POST" && Boolean(response.request().headers()["next-action"])
+  );
   await card.getByRole("button", { name: "Save story" }).click();
+  expect((await saved).ok()).toBe(true);
   await expect(card.getByRole("button", { name: "Remove bookmark" })).toHaveAttribute("aria-pressed", "true");
 
   await page.goto("/saved");

@@ -64,7 +64,7 @@ describe("StoryCard", () => {
     const onToggleSave = vi.fn();
     const user = userEvent.setup();
     const { rerender } = render(createElement(StoryCard, { story: sampleStory }));
-    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Save story" })).not.toBeInTheDocument();
 
     rerender(createElement(StoryCard, { story: sampleStory, onToggleSave }));
     const saveButton = screen.getByRole("button", { name: "Save story" });
