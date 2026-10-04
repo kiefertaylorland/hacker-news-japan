@@ -15,6 +15,9 @@
         "tailwindcss-mcp-server"
       ],
       "env": {}
+    },
+    "Sentry": {
+      "url": "https://mcp.sentry.dev/mcp/kiefer-land-consulting/javascript-nextjs"
     }
   }
 }
