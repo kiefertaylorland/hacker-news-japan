@@ -15,15 +15,15 @@ describe("StoryCard", () => {
     const { rerender } = render(createElement(StoryCard, { story: askStory }));
     expect(screen.getByText("Ask HN")).toBeInTheDocument();
     expect(screen.getByText("example.com")).toBeInTheDocument();
-    expect(screen.getByRole("link")).toHaveAttribute("href", "https://example.com/ask");
+    expect(screen.getByRole("link", { name: /story/i })).toHaveAttribute("href", "https://example.com/ask");
 
     rerender(createElement(StoryCard, { story: showStory }));
     expect(screen.getByText("Show HN")).toBeInTheDocument();
-    expect(screen.getByRole("link")).toHaveAttribute("href", "https://news.ycombinator.com/item?id=234");
+    expect(screen.getByRole("link", { name: /story/i })).toHaveAttribute("href", "https://news.ycombinator.com/item?id=234");
 
     rerender(createElement(StoryCard, { story: jobStory }));
     expect(screen.getByText("Job")).toBeInTheDocument();
-    expect(screen.getByRole("link")).toHaveAttribute("href", "https://news.ycombinator.com/item?id=345");
+    expect(screen.getByRole("link", { name: /story/i })).toHaveAttribute("href", "https://news.ycombinator.com/item?id=345");
 
     rerender(createElement(StoryCard, { story: defaultStory }));
     expect(screen.getByText("Story")).toBeInTheDocument();

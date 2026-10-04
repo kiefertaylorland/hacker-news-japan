@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "prebuild": "node scripts/check-database-schema.mjs votes",
+    "prebuild": "node scripts/check-database-schema.mjs comments",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -36,6 +36,7 @@
     "next": "^16.3.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "sanitize-html": "^2.18.0",
     "tailwind-merge": "^2.3.0",
     "tailwindcss-animate": "^1.0.7"
   },
