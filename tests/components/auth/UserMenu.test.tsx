@@ -17,11 +17,11 @@ describe("UserMenu", () => {
     expect(document.querySelector('input[name="next"]')).toHaveValue("/");
   });
 
-  it("shows the user, a saved link, and sign-out when signed in", () => {
+  it("shows the user linked to their profile, a saved link, and sign-out when signed in", () => {
     const { rerender } = render(
       createElement(UserMenu, { user: { id: "1", name: "octocat", avatarUrl: "https://a/img.png" } })
     );
-    expect(screen.getByText("octocat")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "octocat" })).toHaveAttribute("href", "/profile");
     expect(document.querySelector("img")).toHaveAttribute("src", "https://a/img.png");
     expect(screen.getByRole("link", { name: "Saved" })).toHaveAttribute("href", "/saved");
     expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument();

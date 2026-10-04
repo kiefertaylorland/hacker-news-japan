@@ -27,7 +27,7 @@ export default defineConfig({
     { name: "setup", testMatch: /auth\.setup\.ts/ },
     {
       name: "bookmarks",
-      testMatch: /(?:bookmarks|comments|upvotes)\.spec\.ts/,
+      testMatch: /(?:bookmarks|comments|upvotes|profile)\.spec\.ts/,
       dependencies: ["setup"],
       use: { storageState: STORAGE_STATE },
     },
