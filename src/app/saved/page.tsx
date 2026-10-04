@@ -1,8 +1,7 @@
 import { Suspense } from "react";
 import { BookmarkIcon } from "lucide-react";
-import { UserMenu } from "@/components/auth/UserMenu";
+import { SignInPrompt } from "@/components/auth/SignInPrompt";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
-import { EmptyState } from "@/components/layout/EmptyState";
 import { SavedStories } from "@/components/saved/SavedStories";
 import { getCurrentUser } from "@/lib/auth/user";
 import { listBookmarks } from "@/lib/bookmarks/queries";
@@ -24,16 +23,12 @@ async function SavedContent() {
 
   if (!user) {
     return (
-      <main className="min-h-screen w-full px-4 py-16">
-        <EmptyState
-          className="mx-auto max-w-xl"
-          icon={<BookmarkIcon />}
-          title="Sign in to see saved stories"
-          description="Bookmarks are tied to your GitHub account."
-        >
-          <UserMenu user={null} next="/saved" />
-        </EmptyState>
-      </main>
+      <SignInPrompt
+        icon={<BookmarkIcon />}
+        title="Sign in to see saved stories"
+        description="Bookmarks are tied to your GitHub account."
+        next="/saved"
+      />
     );
   }
 

@@ -4,9 +4,11 @@ import { notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/user";
 import { getDiscussion } from "@/lib/comments/algolia";
 import { listComments } from "@/lib/comments/queries";
+import { listCommentReactions } from "@/lib/comments/reactions";
 import { formatRelativeTime } from "@/lib/utils";
 import { CommentThread } from "@/components/comments/CommentThread";
 import { CommentForm } from "@/components/comments/CommentForm";
+import { CommentReactions } from "@/components/comments/CommentReactions";
 import { UserMenu } from "@/components/auth/UserMenu";
 import { PageShell } from "@/components/layout/PageShell";
 import { ErrorAlert } from "@/components/layout/ErrorAlert";
@@ -18,9 +20,10 @@ export default function DiscussionPage({ params }: Props) {
 
 async function DiscussionContent({ params }: Props) {
   const { id } = await params;
-  let result;
+  let result, reactions;
   try {
     result = await Promise.all([getDiscussion(id), listComments(id), getCurrentUser()]);
+    reactions = await listCommentReactions(result[2]?.id ?? null, result[1].map((comment) => comment.id));
   } catch {
     return <PageShell><ErrorAlert>Could not load discussion. Please try again.</ErrorAlert><Link href={`/stories/${encodeURIComponent(id)}`}>Retry</Link></PageShell>;
   }
@@ -38,7 +41,9 @@ async function DiscussionContent({ params }: Props) {
       <ul className="mb-6 space-y-5">
         {localComments.map((comment) => (
           <li key={comment.id} className="border-l border-slate-700 pl-4">
-            <div className="text-xs text-slate-500"><span>{comment.author}</span>{" · "}<span suppressHydrationWarning>{formatRelativeTime(comment.created_at)}</span>{" · Hacker News Japan"}</div>
+            <div className="text-xs text-slate-500"><span>{comment.author}</span>{" · "}<span suppressHydrationWarning>{formatRelativeTime(comment.created_at)}</span>{" · Hacker News Japan"}
+              {user && <>{" · "}<CommentReactions commentId={comment.id} upvoted={reactions.upvoted.includes(comment.id)} favorited={reactions.favorited.includes(comment.id)} /></>}
+            </div>
             <p className="whitespace-pre-wrap break-words text-sm">{comment.body}</p>
           </li>
         ))}
