@@ -30,7 +30,13 @@ import fs from 'node:fs';
 const args = process.argv.slice(2);
 fs.appendFileSync(process.env.FAKE_TRACE, JSON.stringify(args) + '\\n');
 const state = JSON.parse(fs.readFileSync(process.env.FAKE_STATE, 'utf8'));
-if (args[0] === 'migration') console.log(JSON.stringify({migrations: state.migrations}));
+if (args[0] === 'migration') {
+  if (state.failHistory) {
+    console.log(JSON.stringify({error: 'history connection failed'}));
+    process.exit(25);
+  }
+  console.log(JSON.stringify({migrations: state.migrations}));
+}
 if (args[0] === 'db' && args[1] === 'push' && !args.includes('--dry-run')) {
   if (state.failPush) process.exit(23);
   if (!state.leavePending) {
@@ -43,7 +49,7 @@ if (args[0] === 'db' && args[1] === 'lint' && state.failLint) process.exit(24);
   return {
     directory, history, state, output,
     verify: (pending = false) => execute(process.execPath, [path.join(root, "scripts/verify-migration-history.mjs"), history, ...(pending ? ["--allow-pending"] : [])], { cwd: directory }),
-    deploy: (target = "--local", env: Partial<NodeJS.ProcessEnv> = {}) => execute("bash", [path.join(root, "scripts/deploy-migrations.sh"), target], {
+    deploy: (target = "--local", env: Partial<NodeJS.ProcessEnv> = {}, checkOnly = false) => execute("bash", [path.join(root, "scripts/deploy-migrations.sh"), target, ...(checkOnly ? ["--check-only"] : [])], {
       cwd: directory,
       env: { ...process.env, SUPABASE_BIN: cli, FAKE_STATE: state, FAKE_TRACE: trace, GITHUB_OUTPUT: output, RUNNER_TEMP: directory, ...env },
     }),
@@ -86,6 +92,20 @@ describe("migration history verification", () => {
 });
 
 describe("migration deployment", () => {
+  it("surfaces JSON history errors and stops before pushing SQL", async () => {
+    const f = await fixture([], { failHistory: true });
+    await expect(f.deploy()).rejects.toMatchObject({ code: 25, stdout: expect.stringContaining("history connection failed") });
+    expect(await f.commands()).toHaveLength(1);
+    await expect(readFile(f.output, "utf8")).rejects.toMatchObject({ code: "ENOENT" });
+  });
+
+  it("checks pending history without applying SQL in diagnostic mode", async () => {
+    const f = await fixture(versions.map((local) => ({ local, remote: "" })));
+    expect((await f.deploy("--local", {}, true)).stdout).toContain("2 pending migrations; none applied");
+    expect(await f.commands()).toEqual([["migration", "list", "--local", "--output-format", "json"]]);
+    await expect(readFile(f.output, "utf8")).rejects.toMatchObject({ code: "ENOENT" });
+  });
+
   it("plans, applies older missing migrations, verifies history, and lints", async () => {
     const f = await fixture([{ local: versions[0], remote: "" }, { local: versions[1], remote: versions[1] }]);
     expect((await f.deploy()).stdout).toContain("1 pending migrations applied");

@@ -3,6 +3,11 @@ name: Database Migrations
 on:
   workflow_call:
   workflow_dispatch:
+    inputs:
+      check_only:
+        description: "Read hosted migration history only; do not apply SQL or rebuild Vercel"
+        type: boolean
+        default: false
   schedule:
     - cron: "0 10 * * *"
 
@@ -16,7 +21,8 @@ concurrency:
 
 jobs:
   reconcile:
-    if: github.ref == 'refs/heads/main'
+    # Manual branch diagnostics are read-only; SQL deployment remains main-only.
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && inputs.check_only)
     runs-on: ubuntu-latest
     environment: Production
     timeout-minutes: 20
@@ -29,21 +35,35 @@ jobs:
       # The lockfile selects the CLI; JSON history parsing is tested for 2.117.0.
       - run: npm ci
       - name: Replay committed migrations on a disposable database
+        if: '!inputs.check_only'
         run: |
           npx --no-install supabase start -x studio,imgproxy,realtime,storage-api,edge-runtime,logflare,vector,supavisor
           npx --no-install supabase test db
       - name: Stop disposable database
-        if: always()
+        if: always() && !inputs.check_only
         run: npx --no-install supabase stop --no-backup
       - name: Check, apply, and verify hosted migrations
         id: migrate
-        run: bash scripts/deploy-migrations.sh --linked
+        run: bash scripts/deploy-migrations.sh --linked ${{ inputs.check_only && '--check-only' || '' }}
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
           SUPABASE_PROJECT_ID: ${{ vars.SUPABASE_PROJECT_ID || 'yovbadgitdtbmomeuotz' }}
+      - name: Independently test Postgres authentication in diagnostic mode
+        if: always() && inputs.check_only && steps.migrate.outcome != 'skipped'
+        env:
+          PGPASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          PGHOST: ${{ vars.SUPABASE_POOLER_HOST || 'aws-0-us-west-1.pooler.supabase.com' }}
+          SUPABASE_PROJECT_ID: ${{ vars.SUPABASE_PROJECT_ID || 'yovbadgitdtbmomeuotz' }}
+          PGPORT: "5432"
+          PGDATABASE: postgres
+          PGSSLMODE: require
+          PGCONNECT_TIMEOUT: "10"
+        run: |
+          export PGUSER="postgres.$SUPABASE_PROJECT_ID"
+          psql --no-password -X -Atc 'select version from supabase_migrations.schema_migrations order by version'
       - name: Request Vercel rebuild after migration verification
-        if: steps.migrate.outputs.pending_count != '0' || github.event_name != 'schedule'
+        if: '!inputs.check_only && (steps.migrate.outputs.pending_count != ''0'' || github.event_name != ''schedule'')'
         env:
           VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
         run: |
