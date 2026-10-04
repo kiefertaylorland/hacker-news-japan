@@ -63,6 +63,8 @@ For local development and testing, start the full local stack (Postgres, Auth, P
 supabase start
 ```
 
+Vercel publishes application code but does not apply Supabase migrations. Apply the committed migrations to the database configured for the deployment before publishing it. The `prebuild` script checks the feature tables and RPCs through the anonymous Data API on Vercel and fails the build if they are missing or inaccessible. It uses the publishable key and does not write data. Local and CI builds skip this hosted check; their database tests run against a disposable local stack.
+
 Database-level tests live in `supabase/tests/database/` (pgTAP) and `tests/integration/` (Vitest against the real local instance) — see below.
 
 ## Quality Gates
