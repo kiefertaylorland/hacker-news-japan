@@ -18,7 +18,14 @@ export default defineConfig({
     coverage: {
       provider: "istanbul",
       include: ["src/**/*.{ts,tsx}"],
-      exclude: ["src/**/*.d.ts", "src/components/ui/**"],
+      exclude: [
+        "src/**/*.d.ts",
+        "src/components/ui/**",
+        // Sentry SDK bootstrap wiring; exercised by Next.js at runtime, not unit tests.
+        "src/instrumentation.ts",
+        "src/instrumentation-client.ts",
+        "src/app/global-error.tsx",
+      ],
       reportsDirectory: path.join(os.tmpdir(), `hacker-news-japan-coverage-${path.basename(process.cwd())}`),
       thresholds: {
         statements: 100,
