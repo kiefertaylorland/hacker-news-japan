@@ -1,6 +1,6 @@
 import { beforeEach, vi } from "vitest";
 
-export type QueryResult = { data?: unknown; error?: unknown };
+export type QueryResult = { data?: unknown; error?: unknown; count?: number | null };
 
 /** Chainable Supabase query-builder mock; every method returns the builder and `then` resolves `result`. */
 export function mockQueryBuilder(result: QueryResult) {
