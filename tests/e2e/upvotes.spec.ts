@@ -4,7 +4,7 @@ import { test } from "./helpers/localSession";
 test("upvote once and retain the count and selected state after reload", async ({ signedInPage: page }) => {
   await page.goto("/");
   const card = page.locator("div.group").first();
-  const title = (await card.getByRole("link").textContent())?.trim();
+  const title = (await card.getByRole("link").first().textContent())?.trim();
   expect(title).toBeTruthy();
   const vote = card.getByRole("button", { name: "Upvote", exact: true });
   await expect(vote).toBeEnabled();
