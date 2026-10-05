@@ -7,15 +7,22 @@ function validateStoryId(id: string) {
   if (!/^[1-9]\d*$/.test(id)) throw new Error("Invalid story id");
 }
 
-export async function loadVote(storyId: string): Promise<{ count: number; voted: boolean }> {
-  validateStoryId(storyId);
+const MAX_STORY_IDS = 100;
+
+export type VoteState = { count: number; voted: boolean };
+
+export async function loadVotes(storyIds: string[]): Promise<Record<string, VoteState>> {
+  if (storyIds.length === 0 || storyIds.length > MAX_STORY_IDS) throw new Error("Invalid story ids");
+  storyIds.forEach(validateStoryId);
   const [client, user] = await Promise.all([createClient(), getCurrentUser()]);
-  const { data: count, error } = await client.rpc("story_vote_count", { requested_story_id: storyId });
-  if (error) throw new Error("Could not load votes");
-  if (!user) return { count: count ?? 0, voted: false };
-  const selection = await client.from("votes").select("user_id").eq("story_id", storyId).eq("user_id", user.id).maybeSingle();
-  if (selection.error) throw new Error("Could not load votes");
-  return { count: count ?? 0, voted: selection.data !== null };
+  const [counts, selection] = await Promise.all([
+    client.rpc("story_vote_counts", { requested_story_ids: storyIds }),
+    user ? client.from("votes").select("story_id").in("story_id", storyIds).eq("user_id", user.id) : { data: [], error: null },
+  ]);
+  if (counts.error || selection.error) throw new Error("Could not load votes");
+  const voted = new Set((selection.data as { story_id: string }[]).map((row) => row.story_id));
+  const countById = new Map((counts.data as { story_id: string; count: number }[]).map((row) => [row.story_id, row.count]));
+  return Object.fromEntries(storyIds.map((id) => [id, { count: countById.get(id) ?? 0, voted: voted.has(id) }]));
 }
 
 export async function upvote(storyId: string): Promise<{ error?: string }> {
