@@ -7,6 +7,10 @@ import * as Sentry from "@sentry/nextjs";
 Sentry.init({
   dsn: "https://140e9d6849241f18d2b80cb70291a9e8@o4512200567554048.ingest.us.sentry.io/4512200575156224",
 
+  // Only report from Vercel deployments, so local dev and CI e2e runs stay out of Sentry.
+  enabled: !!process.env.NEXT_PUBLIC_VERCEL_ENV,
+  environment: process.env.NEXT_PUBLIC_VERCEL_ENV,
+
   // Add optional integrations for additional features
   integrations: [Sentry.replayIntegration()],
 
