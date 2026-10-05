@@ -27,7 +27,7 @@ export function ResultsHeader({ query, results, isLoading, sortBy }: ResultsHead
     <div className="flex animate-fade-in items-center justify-between gap-4">
       <div className="flex min-w-0 items-center gap-3">
         <div className="h-5 w-1 shrink-0 rounded-full bg-hn/70" />
-        <p className="min-w-0 break-words text-sm text-slate-400">
+        <p className="min-w-0 wrap-break-word text-sm text-slate-400">
           {isWindowed && <span className="mr-1.5 text-slate-600">Top</span>}
           <span className="font-bold tabular-nums text-slate-100">
             {count.toLocaleString()}
@@ -36,7 +36,7 @@ export function ResultsHeader({ query, results, isLoading, sortBy }: ResultsHead
           {query ? (
             <>
               <span className="text-slate-600">matching</span>
-              <span className="ml-1.5 rounded bg-white/[0.06] px-1.5 py-0.5 text-xs font-medium text-slate-200">
+              <span className="ml-1.5 rounded bg-white/6 px-1.5 py-0.5 text-xs font-medium text-slate-200">
                 {query}
               </span>
             </>
@@ -45,7 +45,7 @@ export function ResultsHeader({ query, results, isLoading, sortBy }: ResultsHead
           )}
         </p>
       </div>
-      <div className="h-px flex-1 bg-white/[0.06]" />
+      <div className="h-px flex-1 bg-white/6" />
     </div>
   );
 }

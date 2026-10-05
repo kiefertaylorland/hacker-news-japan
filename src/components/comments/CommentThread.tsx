@@ -11,7 +11,7 @@ export function CommentThread({ comments }: { comments: HNComment[] }) {
             <span>{comment.author ?? "[deleted]"}</span>{" · "}
             <span suppressHydrationWarning>{formatRelativeTime(comment.created_at)}</span>
           </div>
-          <div className="break-words text-sm text-slate-200 [&_p]:mb-3 [&_a]:underline [&_pre]:overflow-x-auto"
+          <div className="wrap-break-word text-sm text-slate-200 [&_p]:mb-3 [&_a]:underline [&_pre]:overflow-x-auto"
             dangerouslySetInnerHTML={{ __html: sanitizeHtml(comment.text ?? "[deleted]", {
               allowedTags: ["p", "a", "i", "em", "b", "strong", "pre", "code", "br"],
               allowedAttributes: { a: ["href", "rel"] },

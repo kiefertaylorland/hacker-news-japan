@@ -44,7 +44,7 @@ export function ProfileCommentList({ comments }: { comments: ProfileComment[] })
             <span suppressHydrationWarning>{formatRelativeTime(comment.created_at)}</span>{" · on: "}
             <Link href={`/stories/${comment.story_id}`} className="hover:text-hn hover:underline">discussion</Link>
           </div>
-          <p className="whitespace-pre-wrap break-words text-sm">{comment.body}</p>
+          <p className="whitespace-pre-wrap wrap-break-word text-sm">{comment.body}</p>
         </li>
       ))}
     </ul>

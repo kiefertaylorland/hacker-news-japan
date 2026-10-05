@@ -19,7 +19,7 @@ interface EmptyStateProps {
 
 export function EmptyState({ icon, title, description, children, className }: EmptyStateProps) {
   return (
-    <Empty className={cn("border border-dashed border-white/10 bg-white/[0.02]", className)}>
+    <Empty className={cn("border border-dashed border-white/10 bg-white/2", className)}>
       <EmptyHeader>
         <EmptyMedia variant="icon" className="bg-white/5 text-slate-400">
           {icon}
