@@ -11,6 +11,10 @@ export default {
     "src/**/*.tsx",
     "!src/**/*.d.ts",
     "!src/components/ui/**",
+    // Sentry SDK bootstrap wiring; excluded from coverage in vitest.config.ts too.
+    "!src/instrumentation.ts",
+    "!src/instrumentation-client.ts",
+    "!src/app/global-error.tsx",
   ],
   reporters: ["progress", "clear-text", "html"],
   htmlReporter: {

@@ -15,6 +15,10 @@
         "tailwindcss-mcp-server"
       ],
       "env": {}
+    },
+    "Sentry": {
+      "type": "http",
+      "url": "https://mcp.sentry.dev/mcp/kiefer-land-consulting/hacker-news-japan"
     }
   }
 }

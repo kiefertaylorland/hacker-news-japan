@@ -11,7 +11,8 @@ BASE="${BASE:-main}"
 
 # Same exclusions as the `mutate` globs in stryker.config.mjs.
 files=$(git diff --name-only --diff-filter=AMR "origin/$BASE...HEAD" -- 'src/*.ts' 'src/*.tsx' \
-  | grep -v '\.d\.ts$' | grep -v '^src/components/ui/' || true)
+  | grep -v '\.d\.ts$' | grep -v '^src/components/ui/' \
+  | grep -vxE 'src/instrumentation(-client)?\.ts|src/app/global-error\.tsx' || true)
 
 if [ -z "$files" ]; then
   echo "mutation:diff — no mutable src changes vs origin/$BASE, skipping."
