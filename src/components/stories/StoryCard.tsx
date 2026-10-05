@@ -63,7 +63,7 @@ export const StoryCard = memo(function StoryCard({ story, isSaved = false, onTog
     <div className="group block h-full min-w-0 rounded-xl">
       <Card
         className={cn(
-          "h-full overflow-hidden border-l-2 border-white/10 bg-card shadow transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-lg",
+          "h-full overflow-hidden border-l-2 border-white/10 bg-card shadow-sm transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-lg",
           presentation.accent
         )}
       >
@@ -99,19 +99,19 @@ export const StoryCard = memo(function StoryCard({ story, isSaved = false, onTog
             </div>
           </div>
 
-          <CardTitle className="line-clamp-3 break-words text-sm font-semibold leading-snug text-slate-100 transition-colors group-hover:text-hn">
+          <CardTitle className="line-clamp-3 wrap-break-word text-sm font-semibold leading-snug text-slate-100 transition-colors group-hover:text-hn">
             <a
               href={storyUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hn focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="rounded-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-hn focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               {story.title}
             </a>
           </CardTitle>
         </CardHeader>
 
-        <Separator className="bg-white/[0.06]" />
+        <Separator className="bg-white/6" />
 
         {/* Collapsed Footer */}
         <CardFooter className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 text-xs text-slate-400">
@@ -128,7 +128,7 @@ export const StoryCard = memo(function StoryCard({ story, isSaved = false, onTog
           <span suppressHydrationWarning className="shrink-0 text-xs text-slate-600">
             {formatRelativeTime(story.created_at)}
           </span>
-          <ExternalLinkIcon className="h-3 w-3 flex-shrink-0 text-slate-500 transition-colors group-hover:text-hn" />
+          <ExternalLinkIcon className="h-3 w-3 shrink-0 text-slate-500 transition-colors group-hover:text-hn" />
         </CardFooter>
       </Card>
     </div>

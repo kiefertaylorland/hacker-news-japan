@@ -14,6 +14,6 @@ describe("EmptyState", () => {
       })
     );
     const empty = container.querySelector('[data-slot="empty"]');
-    expect(empty).toHaveClass("border", "border-dashed", "border-white/10", "bg-white/[0.02]", "extra-class");
+    expect(empty).toHaveClass("border", "border-dashed", "border-white/10", "bg-white/2", "extra-class");
   });
 });

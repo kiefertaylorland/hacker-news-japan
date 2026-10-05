@@ -44,7 +44,7 @@ async function DiscussionContent({ params }: Props) {
             <div className="text-xs text-slate-500"><span>{comment.author}</span>{" · "}<span suppressHydrationWarning>{formatRelativeTime(comment.created_at)}</span>{" · Hacker News Japan"}
               {user && <>{" · "}<CommentReactions commentId={comment.id} upvoted={reactions.upvoted.includes(comment.id)} favorited={reactions.favorited.includes(comment.id)} /></>}
             </div>
-            <p className="whitespace-pre-wrap break-words text-sm">{comment.body}</p>
+            <p className="whitespace-pre-wrap wrap-break-word text-sm">{comment.body}</p>
           </li>
         ))}
       </ul>

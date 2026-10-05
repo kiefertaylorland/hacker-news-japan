@@ -41,7 +41,7 @@ export function UserMenu({ user, next = "/" }: UserMenuProps) {
           className="h-7 w-7 rounded-full border border-white/15"
         />
       ) : null}
-      <Link href="/profile" className="max-w-[10rem] truncate text-slate-300 hover:text-white hover:underline">{user.name}</Link>
+      <Link href="/profile" className="max-w-40 truncate text-slate-300 hover:text-white hover:underline">{user.name}</Link>
       <Button
         asChild
         variant="ghost"
