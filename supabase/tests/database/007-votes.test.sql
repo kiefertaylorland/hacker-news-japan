@@ -1,6 +1,6 @@
 begin;
 set search_path = public, extensions, tests;
-select plan(14);
+select plan(16);
 select has_table('public', 'votes', 'votes table exists');
 select is((select relrowsecurity from pg_class where oid='public.votes'::regclass), true, 'RLS enabled');
 select tests.create_supabase_user('vote-owner@example.com') as owner \gset
@@ -19,6 +19,8 @@ select tests.clear_authentication();
 select is_empty('select user_id from public.votes', 'anonymous users cannot read voter identities');
 select is(public.story_vote_count('123'), 2::bigint, 'anonymous users can count votes');
 select is(public.story_vote_count('456'), 0::bigint, 'stories without votes have a zero count');
+select results_eq('select story_id, count from public.story_vote_counts(array[''123'',''456''])', $$values ('123'::text, 2::bigint)$$, 'anonymous users can batch-count votes; stories without votes are omitted');
+select is_empty('select * from public.story_vote_counts(array[]::text[])', 'empty batches return no counts');
 select throws_ok(format('insert into public.votes (story_id,user_id) values (''123'',%L)', :'owner'), '42501', null, 'anonymous writes denied');
 select * from finish();
 rollback;
