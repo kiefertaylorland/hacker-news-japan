@@ -17,7 +17,8 @@
       "env": {}
     },
     "Sentry": {
-      "url": "https://mcp.sentry.dev/mcp/kiefer-land-consulting/javascript-nextjs"
+      "type": "http",
+      "url": "https://mcp.sentry.dev/mcp/kiefer-land-consulting/hacker-news-japan"
     }
   }
 }

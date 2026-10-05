@@ -1,7 +1,7 @@
 {
   "servers": {
     "Sentry": {
-      "url": "https://mcp.sentry.dev/mcp/kiefer-land-consulting/javascript-nextjs",
+      "url": "https://mcp.sentry.dev/mcp/kiefer-land-consulting/hacker-news-japan",
       "type": "http"
     }
   }
