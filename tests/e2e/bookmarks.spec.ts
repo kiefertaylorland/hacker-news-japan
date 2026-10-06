@@ -22,6 +22,7 @@ test("save a story, see it on /saved, then unsave it", async ({ page }) => {
   await expect(card.getByRole("button", { name: "Remove bookmark" })).toHaveAttribute("aria-pressed", "true");
 
   await page.goto("/saved");
+  await expect(page.getByRole("heading", { name: "Recommended for you" })).toBeVisible();
   const savedCard = page.locator("div.group", { hasText: title });
   await expect(savedCard).toBeVisible();
 
@@ -34,4 +35,5 @@ test("save a story, see it on /saved, then unsave it", async ({ page }) => {
 
   await page.reload();
   await expect(page.getByText("No saved stories yet")).toBeVisible();
+  await expect(page.getByText("Save stories to get recommendations")).toBeVisible();
 });

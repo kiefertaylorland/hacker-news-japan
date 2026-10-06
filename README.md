@@ -10,6 +10,7 @@ Search and explore Hacker News stories from Japan with advanced filtering and so
 - **Pagination** support for browsing through results
 - **GitHub sign-in** via Supabase Auth (cookie-based sessions, no passwords)
 - **Bookmarks**: save stories and revisit them at `/saved`
+- **Personalized recommendations**: discover related Japan stories on `/saved`, based on topics in your recent bookmarks; already-saved posts are excluded
 - **Staggered card animations** for a polished, modern feel
 - **Glassmorphism UI** with Tailwind CSS for an elegant design
 - **Responsive** and mobile-friendly interface

@@ -5,6 +5,7 @@ import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
 import { SavedStories } from "@/components/saved/SavedStories";
 import { getCurrentUser } from "@/lib/auth/user";
 import { listBookmarks } from "@/lib/bookmarks/queries";
+import { getRecommendedStories } from "@/lib/recommendations/stories";
 
 export const metadata = {
   title: "Saved stories · Hacker News Japan",
@@ -33,5 +34,6 @@ async function SavedContent() {
   }
 
   const stories = await listBookmarks(user.id);
-  return <SavedStories user={user} stories={stories} />;
+  const recommendations = await getRecommendedStories(stories).catch(() => null);
+  return <SavedStories user={user} stories={stories} recommendations={recommendations} />;
 }
