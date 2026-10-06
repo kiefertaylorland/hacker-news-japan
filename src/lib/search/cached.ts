@@ -10,5 +10,6 @@ import type { AlgoliaResponse, SearchParams } from "../types";
 export async function getCachedStories(params: SearchParams): Promise<AlgoliaResponse> {
   "use cache: remote";
   cacheLife("minutes");
-  return searchStories(params);
+  // Bound upstream latency so a stalled topic search cannot hold /saved indefinitely.
+  return searchStories(params, AbortSignal.timeout(10_000));
 }
