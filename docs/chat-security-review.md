@@ -6,7 +6,7 @@ Fixed findings:
 
 - Oversized request bodies were fully buffered before checking their size. The route now reads incrementally, stops at 64,000 characters, cancels the stream, and handles stream failures.
 - Cross-origin requests could trigger paid generation using a reader's cookies. The route now requires JSON and rejects a supplied origin that differs from the request origin.
-- Authenticated requests had no shared usage quota. An atomic database quota now limits each account to 10 requests per minute window and 100 per UTC day. Clients cannot read, modify, or delete quota rows. The privileged function is private; the exposed wrapper is unprivileged. Missing quota infrastructure fails closed.
+- Authenticated requests had no shared usage quota. An atomic database quota now limits each account to 10 requests per minute window and 100 per UTC day. Clients cannot read, modify, or delete quota rows. The privileged function is private; the exposed wrapper is unprivileged. Permissions are restricted on quota objects, preserving the shared schema access needed for anonymous vote counts. Missing quota infrastructure fails closed.
 - Article fetching did not propagate chat cancellation or enforce a timeout. It now shares the chat signal and has a 10-second deadline.
 - Research tool errors could appear verbatim in the response protocol. They are replaced with a fixed public error before classification or delivery.
 - Generated Markdown could automatically load remote image beacons. Chat rendering now removes images and retains the renderer's HTML and URL sanitization.

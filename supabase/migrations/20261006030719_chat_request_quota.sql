@@ -1,6 +1,7 @@
 -- Shared across instances. Clients can consume their own quota but cannot reset it.
 create schema if not exists private;
-revoke all on schema private from public, anon;
+-- Preserve shared schema permissions: anonymous vote counts use private helpers.
+-- Restrict this feature's tables and functions below instead.
 grant usage on schema private to authenticated;
 
 create table private.chat_request_quotas (

@@ -1,6 +1,6 @@
 begin;
 set search_path = public, extensions, tests;
-select plan(22);
+select plan(24);
 select has_table('private', 'chat_request_quotas', 'quota table is private');
 select is((select relrowsecurity from pg_class where oid='private.chat_request_quotas'::regclass), true, 'RLS enabled');
 select is((select prosecdef from pg_proc where oid='public.consume_chat_quota()'::regprocedure), false, 'public wrapper is unprivileged');
@@ -38,6 +38,8 @@ select is(public.consume_chat_quota(), true, 'next UTC day resets daily quota');
 set local role postgres;
 select is((select day_count from private.chat_request_quotas where user_id=:'owner'::uuid), 1, 'daily count restarts at one');
 select tests.clear_authentication();
+select lives_ok('select public.story_vote_count(''1'')', 'quota migration preserves anonymous vote counts');
+select lives_ok('select public.story_vote_counts(array[''1''])', 'quota migration preserves anonymous batch vote counts');
 select throws_ok('select public.consume_chat_quota()', '42501', null, 'anonymous requests denied');
 set local role postgres;
 delete from auth.users where id=:'owner'::uuid;
