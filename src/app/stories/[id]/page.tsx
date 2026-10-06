@@ -33,6 +33,7 @@ async function DiscussionContent({ params }: Props) {
     <PageShell>
       <Link href="/" className="text-sm text-hn">Back to search</Link>
       <h1 className="my-5 text-2xl font-semibold">{story.title}</h1>
+      <Link href={`/chat?story=${encodeURIComponent(id)}`} className="inline-block text-sm text-hn hover:underline">Discuss with AI</Link>
       <UserMenu user={user} next={`/stories/${id}`} />
       <h2 className="my-5 text-lg font-semibold">Comments</h2>
       <p className="mb-4 text-sm text-slate-400">Comments posted here are shared on Hacker News Japan.</p>

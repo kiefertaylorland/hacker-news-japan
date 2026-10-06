@@ -11,6 +11,7 @@ Search and explore Hacker News stories from Japan with advanced filtering and so
 - **GitHub sign-in** via Supabase Auth (cookie-based sessions, no passwords)
 - **Bookmarks**: save stories and revisit them at `/saved`
 - **Personalized recommendations**: discover related Japan stories on `/saved`, based on topics in your recent bookmarks; already-saved posts are excluded
+- **AI chat**: discuss a story or ask about Japan at `/chat`, with topic-checked answers and related HN sources
 - **Staggered card animations** for a polished, modern feel
 - **Glassmorphism UI** with Tailwind CSS for an elegant design
 - **Responsive** and mobile-friendly interface
@@ -48,6 +49,25 @@ Required environment variables (see `.env.example`):
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase publishable (anon) key |
 
 Search works without signing in. Bookmarking requires a GitHub OAuth app configured as an auth provider on the Supabase project, with `http://localhost:3000/**` added to the allowed redirect URLs.
+
+### AI chat
+
+Signed-in readers can open **AI chat** from search, or **Discuss with AI** from a story card or discussion page. The selected story's HN submission and up to 12 top-level comments are loaded on the server as context. The assistant can search related Japan stories through Algolia and display source links. It does not fetch the publisher's full article or search the entire web; readers can paste excerpts for deeper analysis.
+
+Configure these **server-only** variables locally and in Vercel:
+
+| Variable | Description |
+| --- | --- |
+| `AI_CHAT_MODEL` | Current tool-capable AI Gateway model ID in `provider/model` form, selected from the Gateway model catalog |
+| `AI_GATEWAY_API_KEY` | AI Gateway API key; Vercel deployments can use their `VERCEL_OIDC_TOKEN` instead |
+
+Choose a current model from `https://ai-gateway.vercel.sh/v1/models`. No model is hardcoded. Without a model and credentials, the chat shows an unavailable message and the endpoint returns 503. The API requires the existing Supabase session, accepts same-origin JSON requests, validates text-only conversation history, stops reading each request at 64,000 characters, and allows up to 40 messages. Generation is bounded to 2,000 output tokens per step, three model steps, and 55 seconds. Stop cancels the active request, including context and quota calls; article fetching also has a 10-second deadline. Provider and research errors are returned as generic messages. Generated Markdown is sanitized, and remote images are removed to prevent automatic tracking requests.
+
+Apply the committed `chat_request_quota` migration before enabling chat. A database-backed quota atomically allows at most 10 requests per 60-second window and 100 per UTC day per signed-in account, across all application instances. Quota exhaustion returns 429 before article fetching or AI calls. Missing schema, database errors, or invalid quota decisions return 503 without contacting the model. Blocked topics and failed provider requests consume quota. Set provider billing limits as an additional cap across accounts.
+
+Topic alignment is enforced on the server with structured model checks before generation and before releasing the complete answer and research results. Requests and selected articles must substantively concern Japan; relevant comparisons, technical explanations, follow-ups, and brief greetings are allowed. Unrelated tasks, mixed off-topic requests, superficial Japan mentions, and attempts to override the policy receive a fixed redirect. A blocked request never runs the chat agent or its research tool. Output is buffered until approved, so answers appear after validation rather than token by token. Checks share the request's 55-second deadline, have a 10-second limit each, and fail closed: errors or invalid decisions return 503 without releasing generated content. The configured model must support structured output as well as tools. These extra calls add latency and provider cost; model-based relevance decisions can still misclassify and are not a mathematical guarantee of topic compliance.
+
+Conversations remain in page memory and are cleared when leaving/reloading the page or starting a new chat. Messages and selected HN context are sent to the configured AI provider through AI Gateway. Configure provider access and billing before enabling chat in production; generation and research are tested locally with mocked upstream responses when no credentials are available.
 
 ### Database
 

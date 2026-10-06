@@ -21,10 +21,19 @@ function database(result: { data?: unknown; error?: unknown }) {
 }
 
 describe("discussions", () => {
+  it.each([true, false])("bounds article fetches and forwards client cancellation (%s)", async (withSignal) => {
+    const controller = new AbortController();
+    const timeout = vi.spyOn(AbortSignal, "timeout");
+    fetchMock.mockResolvedValue({ status: 404 });
+    await getDiscussion("123", withSignal ? controller.signal : undefined);
+    expect(timeout).toHaveBeenCalledWith(10000);
+    const signal = fetchMock.mock.calls[0][1].signal as AbortSignal;
+    expect(signal.aborted).toBe(false); controller.abort(); expect(signal.aborted).toBe(withSignal);
+  });
   it("fetches a numeric HN story on the server without caching comments", async () => {
     fetchMock.mockResolvedValue({ ok: true, json: async () => ({ id: 123, type: "story", title: "Japan", children: [] }) });
     expect(await getDiscussion("123")).toMatchObject({ title: "Japan" });
-    expect(fetchMock).toHaveBeenCalledWith("https://hn.algolia.com/api/v1/items/123", { cache: "no-store" });
+    expect(fetchMock).toHaveBeenCalledWith("https://hn.algolia.com/api/v1/items/123", { cache: "no-store", signal: expect.any(AbortSignal) });
   });
   it.each(["abc", "0", "-1", "12/34", "0123", "123x", "x123", "", "1\n"])("rejects invalid id %s before network access", async (id) => {
     await expect(getDiscussion(id)).rejects.toThrow("Invalid story id"); expect(fetchMock).not.toHaveBeenCalled();

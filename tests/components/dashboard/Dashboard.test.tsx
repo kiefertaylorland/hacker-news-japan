@@ -60,6 +60,7 @@ describe("Dashboard", () => {
 
     expect(useSearchMock).toHaveBeenCalledWith(sampleResults, undefined);
     expect(screen.getByText("日本")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "AI chat" })).toHaveAttribute("href", "/chat");
     expect(screen.getByText("Request failed")).toBeInTheDocument();
     expect(screen.getByDisplayValue("tokyo")).toBeInTheDocument();
     expect(screen.getByText("Building in Japan")).toBeInTheDocument();

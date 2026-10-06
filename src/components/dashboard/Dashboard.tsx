@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, use } from "react";
+import Link from "next/link";
 import { useSearch } from "@/hooks/useSearch";
 import { useOptimisticBookmarks } from "@/hooks/useOptimisticBookmarks";
 import { UserMenu } from "@/components/auth/UserMenu";
@@ -87,7 +88,7 @@ export function Dashboard({
           </div>
         }
         description="Browse, search, and filter Hacker News stories about Japan — updated in real time."
-        actions={<UserMenu user={user} />}
+        actions={<div className="flex flex-wrap items-center gap-4"><Link href="/chat" className="text-sm text-hn hover:underline">AI chat</Link><UserMenu user={user} /></div>}
       />
 
       <SearchBar value={query} onChange={setQuery} />

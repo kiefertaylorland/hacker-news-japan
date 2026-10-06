@@ -26,6 +26,7 @@ describe("discussion page", () => {
     await renderServerPage(page()); expect(screen.getByRole("heading", { name: "Japan discussion" })).toBeInTheDocument();
     expect(screen.getByText("No comments yet.")).toBeInTheDocument(); expect(screen.getByRole("button", { name: "Sign in with GitHub" })).toBeInTheDocument(); expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
     expect(document.querySelector('input[name="next"]')).toHaveValue("/stories/123");
+    expect(screen.getByRole("link", { name: "Discuss with AI" })).toHaveAttribute("href", "/chat?story=123");
   });
   it("shows the form and local comments as escaped text", async () => {
     vi.mocked(getCurrentUser).mockResolvedValue(authUser);
