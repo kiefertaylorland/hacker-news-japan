@@ -8,7 +8,8 @@
   "ignore": [
     "**/node_modules/**",
     "**/.next/**",
-    "**/src/components/ui/**"
+    "**/src/components/ui/**",
+    "**/src/components/ai-elements/**"
   ],
   "reporters": [
     "console",

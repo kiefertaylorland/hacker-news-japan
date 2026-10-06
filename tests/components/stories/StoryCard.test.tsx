@@ -14,6 +14,8 @@ describe("StoryCard", () => {
 
     const { rerender } = render(createElement(StoryCard, { story: askStory }));
     expect(screen.getByText("Ask HN")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Discuss with AI" })).toHaveAttribute("href", "/chat?story=123");
+    expect(screen.getByRole("link", { name: "7 comments" })).toHaveAttribute("href", "/stories/123");
     expect(screen.getByText("example.com")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /story/i })).toHaveAttribute("href", "https://example.com/ask");
 

@@ -124,6 +124,8 @@ export const StoryCard = memo(function StoryCard({ story, isSaved = false, onTog
 
           <div className="flex-1" />
 
+          <Link href={`/chat?story=${story.objectID}`} className="text-hn hover:underline">Discuss with AI</Link>
+
           <span className="min-w-0 max-w-full truncate text-xs text-slate-500">{story.author}</span>
           <span suppressHydrationWarning className="shrink-0 text-xs text-slate-600">
             {formatRelativeTime(story.created_at)}

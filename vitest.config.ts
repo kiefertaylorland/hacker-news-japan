@@ -21,6 +21,8 @@ export default defineConfig({
       exclude: [
         "src/**/*.d.ts",
         "src/components/ui/**",
+        // Vendored AI Elements primitives; chat composition is covered separately.
+        "src/components/ai-elements/**",
         // Sentry SDK bootstrap wiring; exercised by Next.js at runtime, not unit tests.
         "src/instrumentation.ts",
         "src/instrumentation-client.ts",

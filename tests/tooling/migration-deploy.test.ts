@@ -11,7 +11,7 @@ const directories: string[] = [];
 const versions = ["20260920000000", "20261002035730"];
 type Row = { local: string; remote: string };
 
-async function fixture(rows: Row[], flags: Record<string, boolean> = {}) {
+async function fixture(rows: Row[], flags: Record<string, boolean | undefined> = {}) {
   const directory = await mkdtemp(path.join(os.tmpdir(), "migration ci-"));
   directories.push(directory);
   await mkdir(path.join(directory, "supabase/migrations"), { recursive: true });
