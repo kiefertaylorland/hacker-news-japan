@@ -2,6 +2,14 @@
 
 Search and explore Hacker News stories from Japan with advanced filtering and sorting options. Sign in with GitHub to bookmark stories.
 
+## Project context
+
+This is a personal Hacker News app, built with AI assistance. It also provides a public example of testing application access controls: the [bookmark RLS tests](supabase/tests/database/003-bookmarks-rls-select.test.sql) check that anonymous users cannot read bookmarks and signed-in users only see their own. The [delete-policy tests](supabase/tests/database/005-bookmarks-rls-delete.test.sql) check that one user cannot delete another user's bookmarks. Database tests and integration tests run in [pull request CI](.github/workflows/ci.yml).
+
+These checks cover specific behaviors; they do not establish that the whole application is secure.
+
+My consulting work focuses on application security, AI/LLM feature security, and security testing and automation for SaaS founders. See [Kiefer Land Consulting](https://kieferlandconsulting.com/) for review scope and contact details.
+
 ## Features
 
 - **Full-text search** across Hacker News Japan stories
