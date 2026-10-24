@@ -141,6 +141,9 @@ describe("Dashboard", () => {
 describe("DashboardSkeleton", () => {
   it("renders header, control, and grid placeholders", () => {
     const { container } = render(createElement(DashboardSkeleton));
+    expect(screen.getByRole("heading", { name: "日本" })).toBeInTheDocument();
+    expect(screen.getByText("Japan")).toBeInTheDocument();
+    expect(screen.getByText(/Browse, search, and filter/)).toBeInTheDocument();
     expect(container.querySelectorAll(".rounded-xl").length).toBeGreaterThanOrEqual(10);
   });
 });
