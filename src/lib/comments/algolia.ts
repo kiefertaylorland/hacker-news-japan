@@ -18,7 +18,10 @@ export function validateStoryId(id: string): void {
 
 export async function getDiscussion(id: string): Promise<Discussion | null> {
   validateStoryId(id);
-  const response = await fetch(`https://hn.algolia.com/api/v1/items/${id}`, { cache: "no-store" });
+  const response = await fetch(`https://hn.algolia.com/api/v1/items/${id}`, {
+    cache: "no-store",
+    signal: AbortSignal.timeout(10_000),
+  });
   if (response.status === 404) return null;
   if (!response.ok) throw new Error(`Could not load discussion: ${response.status}`);
   const item = await response.json() as Discussion;

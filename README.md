@@ -152,6 +152,8 @@ Human-written changes go through the same gates; the Claude hooks only add the i
 
 ## Deploy
 
+See the [production readiness audit](docs/production-audit.md) for checklist evidence and prioritized gaps, and the [operations runbook](docs/runbook.md) for proposed incident, recovery and quota procedures.
+
 The app is deployed to Vercel. Pushes to `main` deploy to production; pull requests get preview deployments. Set the two environment variables above in the Vercel project, and add the production URL (plus a preview wildcard such as `https://*-<scope>.vercel.app/**`) to the Supabase auth redirect allow-list.
 
 ## License
