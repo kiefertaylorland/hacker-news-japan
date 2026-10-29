@@ -11,9 +11,6 @@ Sentry.init({
   enabled: !!process.env.NEXT_PUBLIC_VERCEL_ENV,
   environment: process.env.NEXT_PUBLIC_VERCEL_ENV,
 
-  // Add optional integrations for additional features
-  integrations: [Sentry.replayIntegration()],
-
   // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
   tracesSampleRate: 0.1,
 
@@ -32,5 +29,22 @@ Sentry.init({
     // httpBodies: [],
   },
 });
+
+// Keep the recorder out of the startup bundle and off the initial rendering path.
+// Error reporting and tracing remain active from Sentry.init above; replay begins
+// after load, so recordings do not include the initial page load.
+if (process.env.NEXT_PUBLIC_VERCEL_ENV) {
+  const loadReplay = () => {
+    void import("@sentry/nextjs")
+      .then(({ replayIntegration }) => Sentry.addIntegration(replayIntegration()))
+      .catch((error: unknown) => Sentry.captureException(error));
+  };
+
+  if (document.readyState === "complete") {
+    loadReplay();
+  } else {
+    window.addEventListener("load", loadReplay, { once: true });
+  }
+}
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;

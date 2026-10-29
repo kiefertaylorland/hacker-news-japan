@@ -22,7 +22,6 @@ describe("StoryGrid", () => {
     expect(grid).toHaveAttribute("aria-busy", "true");
     expect(grid).toHaveClass(
       "grid",
-      "animate-fade-in",
       "grid-cols-1",
       "gap-4",
       "transition-opacity",

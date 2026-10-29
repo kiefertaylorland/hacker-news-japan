@@ -53,7 +53,7 @@ export const StoryGrid = memo(function StoryGrid({
     <div
       aria-busy={isLoading}
       className={cn(
-        "grid animate-fade-in grid-cols-1 gap-4 transition-opacity md:grid-cols-2 lg:grid-cols-3",
+        "grid grid-cols-1 gap-4 transition-opacity md:grid-cols-2 lg:grid-cols-3",
         isLoading && "opacity-60"
       )}
     >
