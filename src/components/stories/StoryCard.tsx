@@ -8,7 +8,6 @@ import type { HNStory } from "@/lib/types";
 import {
   BookmarkCheckIcon,
   BookmarkIcon,
-  ExternalLinkIcon,
   MessageCircleIcon,
 } from "lucide-react";
 import { Card, CardHeader, CardFooter, CardTitle } from "@/components/ui/card";
@@ -63,13 +62,13 @@ export const StoryCard = memo(function StoryCard({ story, isSaved = false, onTog
     <div className="group block h-full min-w-0 rounded-xl">
       <Card
         className={cn(
-          "h-full overflow-hidden border-l-2 border-white/10 bg-card shadow-sm transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-lg",
+          "h-full overflow-hidden border-l-2 border-white/10 bg-card/90 shadow-[0_10px_30px_rgba(0,0,0,0.14)] transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-[0_18px_42px_rgba(0,0,0,0.24)]",
           presentation.accent
         )}
       >
         {/* Header with badge and title */}
-        <CardHeader className="space-y-0 p-4 pb-3">
-          <div className="mb-2 flex items-start justify-between gap-2">
+        <CardHeader className="space-y-0 p-5 pb-4">
+          <div className="mb-3 flex items-start justify-between gap-2">
             <Badge
               variant="outline"
               className={cn("shrink-0 rounded-full px-2 py-0.5", presentation.badge)}
@@ -78,7 +77,7 @@ export const StoryCard = memo(function StoryCard({ story, isSaved = false, onTog
             </Badge>
             <div className="flex min-w-0 items-center gap-2">
               {story.url && (
-                <span className="truncate font-mono text-xs text-slate-500">{domain}</span>
+                <span className="truncate font-mono text-[0.6875rem] text-slate-400">{domain}</span>
               )}
               {onToggleSave && (
                 <Button
@@ -99,7 +98,7 @@ export const StoryCard = memo(function StoryCard({ story, isSaved = false, onTog
             </div>
           </div>
 
-          <CardTitle className="line-clamp-3 wrap-break-word text-sm font-semibold leading-snug text-slate-100 transition-colors group-hover:text-hn">
+          <CardTitle className="line-clamp-3 wrap-break-word text-base font-semibold leading-6 text-slate-100 transition-colors group-hover:text-orange-300">
             <a
               href={storyUrl}
               target="_blank"
@@ -114,7 +113,7 @@ export const StoryCard = memo(function StoryCard({ story, isSaved = false, onTog
         <Separator className="bg-white/6" />
 
         {/* Collapsed Footer */}
-        <CardFooter className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 text-xs text-slate-400">
+        <CardFooter className="flex flex-wrap items-center gap-x-3 gap-y-2 px-5 py-3.5 text-xs text-slate-400">
           <VoteButton storyId={story.objectID} points={story.points} />
 
           <Link href={`/stories/${story.objectID}`} aria-label={`${story.num_comments ?? 0} comments`} className="flex shrink-0 items-center gap-1.5 hover:text-hn">
@@ -124,11 +123,10 @@ export const StoryCard = memo(function StoryCard({ story, isSaved = false, onTog
 
           <div className="flex-1" />
 
-          <span className="min-w-0 max-w-full truncate text-xs text-slate-500">{story.author}</span>
-          <span suppressHydrationWarning className="shrink-0 text-xs text-slate-600">
+          <span className="min-w-0 max-w-full truncate text-xs text-slate-400">{story.author}</span>
+          <span suppressHydrationWarning className="shrink-0 text-xs text-slate-400">
             {formatRelativeTime(story.created_at)}
           </span>
-          <ExternalLinkIcon className="h-3 w-3 shrink-0 text-slate-500 transition-colors group-hover:text-hn" />
         </CardFooter>
       </Card>
     </div>

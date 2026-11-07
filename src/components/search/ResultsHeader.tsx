@@ -24,28 +24,28 @@ export function ResultsHeader({ query, results, isLoading, sortBy }: ResultsHead
   const isWindowed = sortBy !== undefined && CLIENT_SORTS.has(sortBy);
 
   return (
-    <div className="flex animate-fade-in items-center justify-between gap-4">
+    <div className="flex animate-fade-in items-center justify-between gap-4 pt-1">
       <div className="flex min-w-0 items-center gap-3">
-        <div className="h-5 w-1 shrink-0 rounded-full bg-hn/70" />
+        <div className="h-4 w-0.5 shrink-0 rounded-full bg-hn" />
         <p className="min-w-0 wrap-break-word text-sm text-slate-400">
-          {isWindowed && <span className="mr-1.5 text-slate-600">Top</span>}
+          {isWindowed && <span className="mr-1.5 text-slate-400">Top</span>}
           <span className="font-bold tabular-nums text-slate-100">
             {count.toLocaleString()}
           </span>
-          <span className="mx-1.5 text-slate-600">{count !== 1 ? "stories" : "story"}</span>
+          <span className="mx-1.5 text-slate-400">{count !== 1 ? "stories" : "story"}</span>
           {query ? (
             <>
-              <span className="text-slate-600">matching</span>
+              <span className="text-slate-400">matching</span>
               <span className="ml-1.5 rounded bg-white/6 px-1.5 py-0.5 text-xs font-medium text-slate-200">
                 {query}
               </span>
             </>
           ) : (
-            <span className="text-slate-600">about Japan</span>
+            <span className="text-slate-400">about Japan</span>
           )}
         </p>
       </div>
-      <div className="h-px flex-1 bg-white/6" />
+      <div className="h-px flex-1 bg-white/8" />
     </div>
   );
 }

@@ -29,7 +29,7 @@ export const StoryGrid = memo(function StoryGrid({
   // Show a full page of skeletons only when there is nothing to keep on screen.
   if (isLoading && !stories?.length) {
     return (
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {Array.from({ length: HITS_PER_PAGE }).map((_, i) => (
           <StoryCardSkeleton key={i} />
         ))}
@@ -53,7 +53,7 @@ export const StoryGrid = memo(function StoryGrid({
     <div
       aria-busy={isLoading}
       className={cn(
-        "grid grid-cols-1 gap-4 transition-opacity md:grid-cols-2 lg:grid-cols-3",
+        "grid grid-cols-1 gap-4 transition-opacity md:grid-cols-2 xl:grid-cols-3",
         isLoading && "opacity-60"
       )}
     >
