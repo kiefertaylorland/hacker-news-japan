@@ -23,7 +23,7 @@ export function SearchBar({
   const inputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <InputGroup className="h-12 rounded-xl border-white/10 bg-white/5 shadow-sm transition-colors has-[[data-slot=input-group-control]:focus-visible]:border-hn/50 has-[[data-slot=input-group-control]:focus-visible]:ring-hn/30">
+    <InputGroup className="h-13 rounded-xl border-white/12 bg-white/[0.045] shadow-inner transition-colors has-[[data-slot=input-group-control]:focus-visible]:border-hn/60 has-[[data-slot=input-group-control]:focus-visible]:ring-hn/25">
       <InputGroupAddon>
         <SearchIcon className="text-slate-500 transition-colors group-has-[[data-slot=input-group-control]:focus-visible]/input-group:text-hn" />
       </InputGroupAddon>
@@ -36,7 +36,7 @@ export function SearchBar({
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="text-base text-slate-100 placeholder:text-slate-500"
+        className="text-base text-slate-100 placeholder:text-slate-400 sm:text-[0.9375rem]"
       />
       {value && (
         <InputGroupAddon align="inline-end">

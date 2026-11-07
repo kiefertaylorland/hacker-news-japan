@@ -28,8 +28,8 @@ describe("OptionToggleGroup", () => {
     expect(item).toHaveClass(
       "h-11",
       "border",
-      "border-white/10",
-      "bg-white/5",
+      "border-transparent",
+      "bg-transparent",
       "text-xs",
       "font-medium",
       "text-slate-400"

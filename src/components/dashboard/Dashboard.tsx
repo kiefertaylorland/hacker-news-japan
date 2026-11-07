@@ -75,16 +75,20 @@ export function Dashboard({
     <PageShell>
       <DashboardHeader actions={<UserMenu user={user} />} />
 
-      <SearchBar value={query} onChange={setQuery} />
+      <section className="space-y-4 rounded-2xl border border-white/10 bg-black/20 p-3 shadow-[0_20px_60px_rgba(0,0,0,0.18)] backdrop-blur-sm sm:p-4">
+        <SearchBar value={query} onChange={setQuery} />
 
-      <FilterBar
-        storyType={storyType}
-        dateRange={dateRange}
-        onStoryTypeChange={setStoryType}
-        onDateRangeChange={setDateRange}
-      />
+        <div className="flex flex-col gap-4 border-t border-white/8 pt-4 lg:flex-row lg:items-center lg:justify-between">
+          <FilterBar
+            storyType={storyType}
+            dateRange={dateRange}
+            onStoryTypeChange={setStoryType}
+            onDateRangeChange={setDateRange}
+          />
 
-      <SortControls sortBy={sortBy} onChange={setSortBy} />
+          <SortControls sortBy={sortBy} onChange={setSortBy} />
+        </div>
+      </section>
 
       {/* Auth error (from a failed sign-in redirect) */}
       {authError && <ErrorAlert>Sign-in with GitHub didn&apos;t complete. Please try again.</ErrorAlert>}

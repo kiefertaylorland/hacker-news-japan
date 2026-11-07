@@ -25,7 +25,7 @@ export function FilterBar({
   onDateRangeChange,
 }: FilterBarProps) {
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
       {/* Story Type Filter */}
       <OptionToggleGroup
         options={STORY_TYPE_OPTIONS}
@@ -33,12 +33,12 @@ export function FilterBar({
         onChange={onStoryTypeChange}
         ariaLabel="Story type"
         size="md"
-        className="gap-2"
+        className="gap-1.5"
       />
 
       {/* Date Range Filter */}
       <div className="flex items-center gap-2 text-xs">
-        <span className="text-xs font-medium uppercase tracking-wider text-slate-600">
+        <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
           When:
         </span>
         <Select
@@ -47,7 +47,7 @@ export function FilterBar({
         >
           <SelectTrigger
             aria-label="Date range"
-            className="h-11 sm:h-8 w-[140px] rounded-lg border-white/10 bg-white/5 text-xs font-medium text-slate-200 focus:ring-hn/30"
+            className="h-11 w-[140px] rounded-lg border-white/10 bg-white/5 text-xs font-medium text-slate-200 focus:ring-hn/30 sm:h-9"
           >
             <SelectValue />
           </SelectTrigger>

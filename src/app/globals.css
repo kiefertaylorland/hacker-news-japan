@@ -133,8 +133,11 @@
   body {
     @apply text-foreground;
     background:
-      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(255, 102, 0, 0.06) 0%, transparent 60%),
-      radial-gradient(ellipse 60% 40% at 80% 100%, rgba(255, 102, 0, 0.04) 0%, transparent 50%),
-      linear-gradient(to bottom right, rgb(24, 24, 27), rgb(39, 39, 42), rgb(24, 24, 27));
+      linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+      radial-gradient(circle at 12% 0%, rgba(255, 102, 0, 0.12), transparent 28rem),
+      linear-gradient(145deg, rgb(14, 14, 17), rgb(22, 22, 26) 55%, rgb(14, 14, 17));
+    background-attachment: fixed;
+    background-size: 48px 48px, 48px 48px, auto, auto;
   }
 }
