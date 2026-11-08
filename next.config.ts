@@ -1,6 +1,30 @@
 import { withSentryConfig } from "@sentry/nextjs/config";
 import type { NextConfig } from "next";
 
+const isDev = process.env.NODE_ENV === "development";
+const authOrigin = process.env.NEXT_PUBLIC_SUPABASE_URL
+  ? ` ${new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).origin}`
+  : "";
+// Nonces require dynamic rendering and are incompatible with our prerendered
+// shell. Allow Next.js inline scripts/styles, but block inline event handlers.
+const contentSecurityPolicy = [
+  "default-src 'self'",
+  `script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com${isDev ? " 'unsafe-eval'" : ""}`,
+  "script-src-attr 'none'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https://avatars.githubusercontent.com",
+  "font-src 'self'",
+  // Vercel analytics and Sentry's /monitoring tunnel use same-origin requests.
+  `connect-src 'self' https://hn.algolia.com https://va.vercel-scripts.com https://*.ingest.us.sentry.io${isDev ? " ws: wss:" : ""}`,
+  "worker-src 'self' blob:", // Sentry Replay compression worker.
+  "object-src 'none'",
+  "base-uri 'self'",
+  // Browsers also check form-action on redirects from the sign-in server action.
+  `form-action 'self'${authOrigin} https://github.com`,
+  "frame-ancestors 'none'",
+  ...(!isDev ? ["upgrade-insecure-requests"] : []),
+].join("; ");
+
 const nextConfig: NextConfig = {
   cacheComponents: true,
   async headers() {
@@ -9,6 +33,9 @@ const nextConfig: NextConfig = {
       headers: [
         { key: "X-Content-Type-Options", value: "nosniff" },
         { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        { key: "Content-Security-Policy", value: contentSecurityPolicy },
+        { key: "X-Frame-Options", value: "DENY" },
+        { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
       ],
     }];
   },
