@@ -62,7 +62,7 @@ export const StoryCard = memo(function StoryCard({ story, isSaved = false, onTog
     <div className="group block h-full min-w-0 rounded-xl">
       <Card
         className={cn(
-          "h-full overflow-hidden border-l-2 border-white/10 bg-card/90 shadow-[0_10px_30px_rgba(0,0,0,0.14)] transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-[0_18px_42px_rgba(0,0,0,0.24)]",
+          "story-motion h-full overflow-hidden border-l-2 border-white/10 bg-card/90 shadow-[0_10px_30px_rgba(0,0,0,0.14)] hover:border-white/20 hover:shadow-[0_18px_42px_rgba(0,0,0,0.24)]",
           presentation.accent
         )}
       >
@@ -88,7 +88,7 @@ export const StoryCard = memo(function StoryCard({ story, isSaved = false, onTog
                   aria-pressed={isSaved}
                   onClick={() => onToggleSave(story)}
                   className={cn(
-                    "-mr-2 -mt-1.5 h-7 w-7 shrink-0 hover:bg-white/10",
+                    "bookmark-motion -mr-2 -mt-1.5 h-7 w-7 shrink-0 hover:bg-white/10",
                     isSaved ? "text-hn hover:text-hn" : "text-slate-500 hover:text-slate-200"
                   )}
                 >

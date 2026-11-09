@@ -21,7 +21,7 @@ export function VoteButton({ storyId, points }: { storyId: string; points: numbe
     <div>
       <button type="button" aria-label={vote.voted ? "Upvoted" : "Upvote"} aria-pressed={vote.voted}
         disabled={!loaded || pending || vote.voted}
-        className={cn("flex items-center gap-1.5 rounded focus-visible:ring-2 focus-visible:ring-hn", vote.voted ? "text-hn" : "text-slate-400 hover:text-hn")}
+        className={cn("vote-motion flex items-center gap-1.5 rounded focus-visible:ring-2 focus-visible:ring-hn", vote.voted ? "text-hn" : "text-slate-400 hover:text-hn")}
         onClick={() => {
           setError(undefined);
           startTransition(async () => {

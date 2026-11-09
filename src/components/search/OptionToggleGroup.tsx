@@ -4,7 +4,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 
 const ITEM_BASE =
-  "h-11 border border-transparent bg-transparent text-xs font-medium text-slate-400 transition-colors hover:bg-white/6 hover:text-slate-200 data-[state=on]:border-hn/35 data-[state=on]:bg-hn/12 data-[state=on]:text-orange-300";
+  "filter-motion h-11 border border-transparent bg-transparent text-xs font-medium text-slate-400 transition-colors hover:bg-white/6 hover:text-slate-200 data-[state=on]:border-hn/35 data-[state=on]:bg-hn/12 data-[state=on]:text-orange-300";
 
 const SIZE_CLASSES = {
   md: "rounded-lg px-3 sm:h-9",
