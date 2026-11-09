@@ -32,6 +32,38 @@ describe("vote button", () => {
   it("ignores rejected responses after unmount", async () => {
     let reject!: (error: Error) => void; vi.mocked(loadVote).mockReturnValue(new Promise((_r, r) => { reject = r; })); const { unmount } = render(<VoteButton storyId="123" points={1} />); unmount(); await act(async () => { reject(new Error("offline")); }); expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
+  it.each(["resolve", "reject"] as const)("ignores a stale %s after switching stories", async (outcome) => {
+    let resolve!: (value: { count: number; voted: boolean }) => void;
+    let reject!: (error: Error) => void;
+    vi.mocked(loadVote)
+      .mockReturnValueOnce(new Promise((res, rej) => { resolve = res; reject = rej; }))
+      .mockResolvedValueOnce({ count: 2, voted: false });
+    const { rerender } = render(<VoteButton storyId="123" points={10} />);
+    expect(screen.getByRole("button")).toBeDisabled();
+
+    rerender(<VoteButton storyId="456" points={20} />);
+    await waitFor(() => expect(screen.getByRole("button")).toBeEnabled());
+    expect(loadVote).toHaveBeenLastCalledWith("456");
+    expect(screen.getByRole("button", { name: "Upvote" })).toHaveTextContent("22");
+
+    await act(async () => {
+      if (outcome === "resolve") resolve({ count: 99, voted: true });
+      else reject(new Error("old request failed"));
+    });
+    const button = screen.getByRole("button", { name: "Upvote" });
+    expect(button).toHaveTextContent("22");
+    expect(button).toBeEnabled();
+    expect(button).toHaveAttribute("aria-pressed", "false");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+  it("preserves motion, keyboard focus and unselected vote styling", async () => {
+    vi.mocked(loadVote).mockResolvedValue({ count: 0, voted: false });
+    render(<VoteButton storyId="123" points={10} />);
+    const button = screen.getByRole("button", { name: "Upvote" });
+    await waitFor(() => expect(button).toBeEnabled());
+    expect(button).toHaveClass("vote-motion", "focus-visible:ring-2", "focus-visible:ring-hn", "text-slate-400", "hover:text-hn");
+    expect(button).not.toHaveClass("text-hn");
+  });
   it("clears a previous error while a retry is pending", async () => {
     vi.mocked(loadVote).mockResolvedValue({ count: 0, voted: false });
     vi.mocked(upvote).mockResolvedValueOnce({ error: "Try again" });

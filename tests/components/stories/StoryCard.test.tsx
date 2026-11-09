@@ -31,6 +31,13 @@ describe("StoryCard", () => {
     expect(screen.getAllByText("0")).toHaveLength(2);
   });
 
+  it.each([12, 0, null])("labels the discussion link with %s comments", (count) => {
+    render(createElement(StoryCard, { story: makeStory({ objectID: "123", num_comments: count }) }));
+    const link = screen.getByRole("link", { name: `${count ?? 0} comments` });
+    expect(link).toHaveAttribute("href", "/stories/123");
+    expect(link).toHaveTextContent(String(count ?? 0));
+  });
+
   it("keeps badge and accent precedence consistent for overlapping tags", () => {
     const { container } = render(
       createElement(StoryCard, { story: makeStory({ _tags: ["job", "show_hn", "ask_hn"] }) })
