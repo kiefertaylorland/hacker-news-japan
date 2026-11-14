@@ -57,4 +57,30 @@ describe("client monitoring startup", () => {
     expect(sentry.init).toHaveBeenCalledWith(expect.objectContaining({ enabled: false }));
     expect(sentry.replayIntegration).not.toHaveBeenCalled();
   });
+
+  it.each([
+    ["Non-Error promise rejection captured with value: Object Not Found Matching Id:2, MethodName:update, ParamCount:4", true],
+    ["Object Not Found Matching Id:123, MethodName:update, ParamCount:4", true],
+    ["Non-Error promise rejection captured with value: Failed to fetch", false],
+    ["Cannot read properties of undefined (reading 'update')", false],
+    ["Object Not Found Matching Id:2", false],
+    ["Object Not Found Matching Id:2, MethodName:save, ParamCount:4", false],
+    ["Object Not Found Matching Id:2, MethodName:update, ParamCount:3", false],
+    ["Object Not Found Matching Id:2, MethodName:update, ParamCount:40", false],
+    ["Application failure: Object Not Found Matching Id:2, MethodName:update, ParamCount:4", false],
+    ["Object Not Found Matching Id:2, MethodName:update, ParamCount:4 while saving story", false],
+  ])("filters only the known CefSharp update rejection: %s", async (value, ignored) => {
+    vi.stubEnv("NEXT_PUBLIC_VERCEL_ENV", "");
+    await import("@/instrumentation-client");
+    // Exercise the SDK's real filter with the options registered by our bootstrap.
+    const { eventFiltersIntegration } = await vi.importActual<typeof import("@sentry/nextjs")>("@sentry/nextjs");
+    const filter = eventFiltersIntegration();
+    // The filter only reads client options; no SDK initialization or network transport.
+    const client = {
+      getOptions: () => sentry.init.mock.calls[0][0],
+    } as Parameters<NonNullable<typeof filter.processEvent>>[2];
+    const event = { exception: { values: [{ type: "UnhandledRejection", value }] } };
+    const result = filter.processEvent!(event, {}, client);
+    expect(result).toEqual(ignored ? null : event);
+  });
 });
