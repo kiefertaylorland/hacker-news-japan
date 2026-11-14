@@ -11,6 +11,13 @@ Sentry.init({
   enabled: !!process.env.NEXT_PUBLIC_VERCEL_ENV,
   environment: process.env.NEXT_PUBLIC_VERCEL_ENV,
 
+  // CefSharp host bridge failures are outside the app (GitHub issue #82).
+  // Match only this signature, including Sentry's wrapper for string rejections.
+  // https://github.com/cefsharp/CefSharp/blob/master/CefSharp/Internals/JavascriptObjectRepository.cs
+  ignoreErrors: [
+    /^(?:Non-Error promise rejection captured with value: )?Object Not Found Matching Id:\d+, MethodName:update, ParamCount:4$/,
+  ],
+
   // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
   tracesSampleRate: 0.1,
 
