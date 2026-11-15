@@ -7,11 +7,11 @@ test.beforeEach(clearFakeUserBookmarks);
 // can't be routed from the browser); the test saves whichever story is first.
 test("save a story, see it on /saved, then unsave it", async ({ page }) => {
   await page.goto("/");
-  const firstSavable = page.locator("div.group", { has: page.getByRole("button", { name: "Save story" }) });
+  const firstSavable = page.locator("article.group", { has: page.getByRole("button", { name: "Save story" }) });
   const title = (await firstSavable.first().getByRole("link").first().textContent())?.trim() ?? "";
   expect(title).not.toBe("");
   // Keyed by title: the "Save story" button this card was found by goes away once clicked.
-  const card = page.locator("div.group", { hasText: title }).first();
+  const card = page.locator("article.group", { hasText: title }).first();
 
   // The selected icon is optimistic; wait for persistence before navigating away.
   const saved = page.waitForResponse((response) =>
@@ -23,7 +23,7 @@ test("save a story, see it on /saved, then unsave it", async ({ page }) => {
 
   await page.goto("/saved");
   await expect(page.getByRole("heading", { name: "Recommended for you" })).toBeVisible();
-  const savedCard = page.locator("div.group", { hasText: title });
+  const savedCard = page.locator("article.group", { hasText: title });
   await expect(savedCard).toBeVisible();
 
   // Persisted server-side, not just optimistic UI.

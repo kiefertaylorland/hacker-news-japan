@@ -59,13 +59,14 @@ describe("Dashboard", () => {
     render(createElement(Dashboard, { initialResults: sampleResults }));
 
     expect(useSearchMock).toHaveBeenCalledWith(sampleResults, undefined);
-    expect(screen.getByText("日本")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "日本" })).toBeInTheDocument();
     expect(screen.getByText("Request failed")).toBeInTheDocument();
     expect(screen.getByDisplayValue("tokyo")).toBeInTheDocument();
     expect(screen.getByText("Building in Japan")).toBeInTheDocument();
     expect(screen.getByRole("main")).toBeInTheDocument();
     expect(screen.getByRole("alert")).toHaveTextContent("Request failed");
-    expect(screen.getByRole("status")).toHaveTextContent("matching");
+    expect(screen.getByRole("alert")).toHaveTextContent("Could not refresh stories. Previous results are still shown below.");
+    expect(screen.getAllByRole("status")[0]).toHaveTextContent("Previous results");
   });
 
   it("renders the dashboard without errors or results", () => {
@@ -77,10 +78,58 @@ describe("Dashboard", () => {
     expect(screen.getByText("No stories found")).toBeInTheDocument();
   });
 
+  it("offers retry without presenting a request failure as an empty search", async () => {
+    const state = mockSearchState({ error: "Request failed" });
+    useSearchMock.mockReturnValue(state);
+    render(<Dashboard />);
+    expect(screen.getByText("Stories unavailable")).toBeInTheDocument();
+    expect(screen.queryByText("No stories found")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Clear filters and browse stories" })).not.toBeInTheDocument();
+    expect(screen.getByRole("alert")).not.toHaveTextContent("Previous results are still shown below.");
+    await userEvent.setup().click(screen.getByRole("button", { name: "Retry search" }));
+    expect(state.retry).toHaveBeenCalledOnce();
+  });
+
+  it("clears constraints from a completed empty search", async () => {
+    const state = mockSearchState({ results: { ...sampleResults, hits: [], nbHits: 0, nbPages: 0 } });
+    useSearchMock.mockReturnValue(state);
+    render(<Dashboard />);
+    await userEvent.setup().click(screen.getByRole("button", { name: "Clear filters and browse stories" }));
+    expect(state.reset).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    ["completed results", sampleResults, false, false],
+    ["refreshing empty results", { ...sampleResults, hits: [] as HNStory[], nbHits: 0, nbPages: 0 }, true, false],
+    ["completed empty results", { ...sampleResults, hits: [] as HNStory[], nbHits: 0, nbPages: 0 }, false, true],
+  ] as const)("offers the empty-search recovery action only for %s when appropriate", (_label, results, isLoading, expected) => {
+    useSearchMock.mockReturnValue(mockSearchState({ results, isLoading }));
+    render(<Dashboard />);
+    const action = screen.queryByRole("button", { name: "Clear filters and browse stories" });
+    if (expected) expect(action).toBeInTheDocument();
+    else expect(action).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ["settled", false, null, false],
+    ["refreshing", true, null, true],
+    ["failed refresh", false, "Could not fetch the next page", true],
+  ] as const)("allows page changes only when the search is %s and usable", async (_label, isLoading, error, disabled) => {
+    const state = mockSearchState({ results: { ...sampleResults, nbPages: 2, page: 0 }, isLoading, error });
+    useSearchMock.mockReturnValue(state);
+    render(<Dashboard />);
+    const next = screen.getByRole("button", { name: "Next" });
+    if (disabled) expect(next).toBeDisabled();
+    else expect(next).toBeEnabled();
+    await userEvent.setup().click(next);
+    if (disabled) expect(state.setPage).not.toHaveBeenCalled();
+    else expect(state.setPage).toHaveBeenCalledWith(1);
+  });
+
   it("announces loading while keeping previous results visible", () => {
     useSearchMock.mockReturnValue(mockSearchState({ results: sampleResults, isLoading: true }));
     render(createElement(Dashboard));
-    expect(screen.getByRole("status")).toHaveTextContent("Loading stories");
+    expect(screen.getAllByRole("status")[0]).toHaveTextContent("Loading stories");
     expect(screen.getByText("Building in Japan").closest("[aria-busy]")).toHaveAttribute("aria-busy", "true");
   });
 
@@ -108,6 +157,18 @@ describe("Dashboard", () => {
     render(createElement(Dashboard));
     expect(screen.getByRole("button", { name: "Sign in with GitHub" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Save story" })).not.toBeInTheDocument();
+  });
+
+  it("retries an inline bookmark failure through the dedicated failed operation", async () => {
+    useSearchMock.mockReturnValue(mockSearchState({ results: sampleResults }));
+    toggleBookmarkMock.mockRejectedValueOnce(new Error("response lost"));
+    render(<Dashboard user={authUser} savedIds={[]} />);
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Save story" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("previous saved state has been restored");
+    await user.click(screen.getByRole("button", { name: "Retry bookmark" }));
+    await waitFor(() => expect(toggleBookmarkMock).toHaveBeenCalledTimes(2));
+    expect(toggleBookmarkMock).toHaveBeenLastCalledWith(sampleStory, false);
   });
 
   it("toggles bookmarks optimistically for signed-in users", async () => {

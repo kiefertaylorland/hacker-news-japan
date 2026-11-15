@@ -39,25 +39,22 @@ describe("StoryCard", () => {
   });
 
   it("keeps badge and accent precedence consistent for overlapping tags", () => {
-    const { container } = render(
-      createElement(StoryCard, { story: makeStory({ _tags: ["job", "show_hn", "ask_hn"] }) })
-    );
+    render(createElement(StoryCard, { story: makeStory({ _tags: ["job", "show_hn", "ask_hn"] }) }));
     expect(screen.getByText("Ask HN")).toHaveClass("border-blue-500/30");
-    expect(container.querySelector(".border-l-2")).toHaveClass("border-l-blue-500/60");
+    expect(screen.queryByText("Show HN")).not.toBeInTheDocument();
+    expect(screen.queryByText("Job")).not.toBeInTheDocument();
   });
 
   it.each([
-    ["ask_hn", "Ask HN", "border-blue-500/30", "border-l-blue-500/60"],
-    ["show_hn", "Show HN", "border-emerald-500/30", "border-l-emerald-500/60"],
-    ["job", "Job", "border-slate-500/30", "border-l-slate-500/40"],
-    ["story", "Story", "border-amber-500/30", "border-l-hn/50"],
-  ] as const)("applies the %s badge and accent classes", (tag, label, badgeClass, accentClass) => {
-    const { container } = render(
-      createElement(StoryCard, { story: makeStory({ _tags: tag === "story" ? [] : [tag] }) })
-    );
+    ["ask_hn", "Ask HN", "border-blue-500/30"],
+    ["show_hn", "Show HN", "border-emerald-500/30"],
+    ["job", "Job", "border-slate-500/30"],
+    ["story", "Story", "border-amber-500/30"],
+  ] as const)("labels the %s category consistently", (tag, label, badgeClass) => {
+    render(createElement(StoryCard, { story: makeStory({ _tags: tag === "story" ? [] : [tag] }) }));
     const badge = screen.getByText(label);
     expect(badge).toHaveClass("shrink-0", "rounded-full", "px-2", "py-0.5", badgeClass);
-    expect(container.querySelector(".border-l-2")).toHaveClass(accentClass);
+
   });
 
   it("renders story timestamps as relative text", async () => {
@@ -83,15 +80,33 @@ describe("StoryCard", () => {
     expect(screen.getByRole("button", { name: "Remove bookmark" })).toHaveAttribute("aria-pressed", "true");
   });
 
-  it("applies base and state-dependent classes to the bookmark button", () => {
-    const { rerender } = render(createElement(StoryCard, { story: sampleStory, onToggleSave: vi.fn() }));
-    const unsaved = screen.getByRole("button", { name: "Save story" });
-    expect(unsaved).toHaveClass("-mr-2", "-mt-1.5", "h-7", "w-7", "shrink-0", "hover:bg-white/10", "text-slate-500", "hover:text-slate-200");
-    expect(unsaved).not.toHaveClass("text-hn");
 
-    rerender(createElement(StoryCard, { story: sampleStory, onToggleSave: vi.fn(), isSaved: true }));
-    const saved = screen.getByRole("button", { name: "Remove bookmark" });
-    expect(saved).toHaveClass("-mr-2", "-mt-1.5", "h-7", "w-7", "shrink-0", "hover:bg-white/10", "text-hn");
-    expect(saved).not.toHaveClass("text-slate-500");
+  it("exposes an accessible pending bookmark control and blocks duplicate clicks", async () => {
+    const onToggleSave = vi.fn();
+    render(createElement(StoryCard, { story: sampleStory, onToggleSave, isPending: true, isSaved: true }));
+    const button = screen.getByRole("button", { name: "Remove bookmark" });
+    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute("aria-busy", "true");
+    expect(button).toHaveAttribute("aria-pressed", "true");
+    await userEvent.setup().click(button);
+    expect(onToggleSave).not.toHaveBeenCalled();
+  });
+
+  it("associates a bookmark error with its control and retries the affected story", async () => {
+    const onToggleSave = vi.fn();
+    const onRetrySave = vi.fn();
+    render(createElement(StoryCard, { story: sampleStory, onToggleSave, onRetrySave, saveError: "Could not save this story." }));
+    const error = screen.getByRole("alert");
+    expect(error).toHaveTextContent("Could not save this story.");
+    expect(screen.getByRole("button", { name: "Save story" })).toHaveAttribute("aria-describedby", error.id);
+    await userEvent.setup().click(screen.getByRole("button", { name: "Retry bookmark" }));
+    expect(onRetrySave).toHaveBeenCalledWith(sampleStory.objectID);
+    expect(onToggleSave).not.toHaveBeenCalled();
+  });
+
+  it("keeps the error readable without offering a retry when no retry handler is supplied", () => {
+    render(createElement(StoryCard, { story: sampleStory, saveError: "No bookmark handler" }));
+    expect(screen.queryByRole("button", { name: "Retry bookmark" })).not.toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("No bookmark handler");
   });
 });

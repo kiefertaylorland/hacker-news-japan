@@ -7,17 +7,17 @@ export function DashboardHeader({ actions }: { actions: ReactNode }) {
     <PageHeader
       eyebrow={
         <div className="flex items-center gap-2.5">
-          <span className="size-2.5 rounded-full bg-hn shadow-[0_0_18px_rgba(255,102,0,0.65)]" />
+          <span className="size-2.5 rounded-full bg-hn " />
           <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.24em] text-slate-400">Hacker News</span>
         </div>
       }
       title={
         <div className="flex items-baseline gap-3 sm:gap-4">
-          <h1 className="font-serif text-5xl font-semibold leading-none tracking-[-0.06em] text-white sm:text-6xl">日本</h1>
+          <h1 className="font-serif text-4xl font-semibold leading-none tracking-[-0.06em] text-white sm:text-5xl">日本</h1>
           <span className="text-lg font-light uppercase tracking-[0.18em] text-slate-400 sm:text-xl">Japan</span>
         </div>
       }
-      description="Browse, search, and filter Hacker News stories about Japan — updated in real time."
+      description="Browse, search, and filter Hacker News stories about Japan."
       actions={actions}
     />
   );

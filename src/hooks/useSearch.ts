@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { fetchSearchWindow, pageSearchWindow, searchStories, searchWindowKey } from "@/lib/search/api";
+import { DEFAULT_SEARCH_PARAMS } from "@/lib/constants";
 import { CLIENT_SORTS } from "@/lib/search/algolia";
 import type { AlgoliaResponse, DateRange, SearchParams, SortBy, StoryType } from "@/lib/types";
 import { readSearchParams, sameSearchParams, toSearchUrl } from "@/lib/search/params";
@@ -17,6 +18,8 @@ interface UseSearchReturn extends SearchParams {
   setDateRange: (range: DateRange) => void;
   setSortBy: (sort: SortBy) => void;
   setPage: (page: number) => void;
+  retry: () => void;
+  reset: () => void;
 }
 
 /**
@@ -46,6 +49,7 @@ export function useSearch(
   // Results state
   const [results, setResults] = useState<AlgoliaResponse | null>(initialResults);
   const [isLoading, setIsLoading] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -72,7 +76,7 @@ export function useSearch(
     // Only the params the server actually rendered may reuse the seeded results; any
     // client-side change must fetch (the server never re-renders on pushState).
     const serverParams = initialParams ?? initialParamsRef.current;
-    if (initialResults && sameSearchParams(current, serverParams)) {
+    if (retryKey === 0 && initialResults && sameSearchParams(current, serverParams)) {
       setResults(initialResults);
       setIsLoading(false);
       setError(null);
@@ -108,7 +112,7 @@ export function useSearch(
       } catch (err) {
         if (controller.signal.aborted) return;
         setError(err instanceof Error ? err.message : "Unknown error");
-        setResults(null);
+        // Keep the last successful response available for reading and recovery.
       } finally {
         if (!controller.signal.aborted) {
           setIsLoading(false);
@@ -119,7 +123,7 @@ export function useSearch(
     // Fetch results with current parameters (empty query is valid—returns top stories)
     fetchResults();
     return () => controller.abort();
-  }, [query, debouncedQuery, storyType, dateRange, sortBy, page, initialResults, initialParams]);
+  }, [query, debouncedQuery, storyType, dateRange, sortBy, page, initialResults, initialParams, retryKey]);
 
   // Discrete changes (filters, page) get a history entry; typing is mirrored once it settles.
   const navigate = useCallback(
@@ -159,5 +163,11 @@ export function useSearch(
     [navigate, params]
   );
 
-  return { ...params, results, isLoading, error, setQuery, setStoryType, setDateRange, setSortBy, setPage };
+  const retry = useCallback(() => {
+    windowRef.current = null;
+    setRetryKey((key) => key + 1);
+  }, []);
+  const reset = useCallback(() => navigate({ ...DEFAULT_SEARCH_PARAMS }), [navigate]);
+
+  return { retry, reset, ...params, results, isLoading, error, setQuery, setStoryType, setDateRange, setSortBy, setPage };
 }

@@ -30,6 +30,12 @@ describe("SavedStories", () => {
     expect(screen.getByText("Save stories to get recommendations")).toBeInTheDocument();
   });
 
+  it("starts keyboard navigation at the skip link rather than a recovery heading", async () => {
+    render(<SavedStories user={authUser} stories={[]} recommendations={[]} />);
+    await userEvent.setup().tab();
+    expect(screen.getByRole("link", { name: "Skip to content" })).toHaveFocus();
+  });
+
   it("optimistically removes a story when its bookmark is toggled", async () => {
     mockedGetCurrentUser.mockResolvedValue(authUser);
     const { from, builder } = mockQueryBuilder({ error: null });
@@ -46,6 +52,7 @@ describe("SavedStories", () => {
 
     // Removed immediately while the server action is still pending.
     await waitFor(() => expect(screen.getByText("No saved stories yet")).toBeInTheDocument());
+    expect(screen.getByRole("heading", { name: "Saved stories" })).toHaveFocus();
     expect(builder.delete).toHaveBeenCalled();
     finishDelete();
     // After settling, the (unchanged) prop list is shown again until the page revalidates.
@@ -69,5 +76,22 @@ describe("SavedStories", () => {
     finishSave();
     const { revalidatePath } = await import("next/cache");
     await waitFor(() => expect(revalidatePath).toHaveBeenCalledWith("/saved"));
+  });
+
+  it("restores a failed removal and retries while keeping a stable keyboard destination", async () => {
+    mockedGetCurrentUser.mockResolvedValue(authUser);
+    const { from, builder } = mockQueryBuilder({ error: { message: "offline" } });
+    mockedCreateClient.mockResolvedValue({ from } as never);
+    render(<SavedStories user={authUser} stories={[sampleStory]} recommendations={[]} />);
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Remove bookmark" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("previous saved state has been restored");
+    expect(screen.getByRole("button", { name: "Remove bookmark" })).toHaveFocus();
+    builder.then.mockImplementation((resolve: (value: unknown) => unknown) => resolve({ error: null }));
+    await user.click(screen.getByRole("button", { name: "Retry bookmark" }));
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Bookmark removed."));
+    expect(builder.delete).toHaveBeenCalledTimes(2);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Saved stories" })).toHaveFocus();
   });
 });

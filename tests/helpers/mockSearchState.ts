@@ -19,6 +19,8 @@ export function mockSearchState(overrides: Partial<SearchState> = {}): SearchSta
     setDateRange: vi.fn(),
     setSortBy: vi.fn(),
     setPage: vi.fn(),
+    retry: vi.fn(),
+    reset: vi.fn(),
     ...overrides,
   };
 }

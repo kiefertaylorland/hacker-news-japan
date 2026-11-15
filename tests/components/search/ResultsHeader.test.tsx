@@ -10,6 +10,11 @@ describe("ResultsHeader", () => {
     expect(container.querySelector(".animate-pulse")).toBeInTheDocument();
   });
 
+  it("shows visible refresh feedback when previous results remain readable", () => {
+    render(<ResultsHeader query="new" results={makeResults()} isLoading />);
+    expect(screen.getByText(/Updating stories/)).toBeInTheDocument();
+  });
+
   it("renders nothing without results", () => {
     const { container } = render(createElement(ResultsHeader, { query: "", results: null, isLoading: false }));
     expect(container.firstChild).toBeNull();

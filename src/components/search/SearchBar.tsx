@@ -25,7 +25,7 @@ export function SearchBar({
   return (
     <InputGroup className="search-motion h-13 rounded-xl border-white/12 bg-white/[0.045] shadow-inner transition-colors has-[[data-slot=input-group-control]:focus-visible]:border-hn/60 has-[[data-slot=input-group-control]:focus-visible]:ring-hn/25">
       <InputGroupAddon>
-        <SearchIcon className="text-slate-500 transition-colors group-has-[[data-slot=input-group-control]:focus-visible]/input-group:text-hn" />
+        <SearchIcon className="text-muted-foreground transition-colors group-has-[[data-slot=input-group-control]:focus-visible]/input-group:text-hn" />
       </InputGroupAddon>
       <InputGroupInput
         type="text"

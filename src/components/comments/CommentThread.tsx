@@ -7,7 +7,7 @@ export function CommentThread({ comments }: { comments: HNComment[] }) {
     <ul className="space-y-5">
       {comments.map((comment) => (
         <li key={comment.id} id={`comment-${comment.id}`} className="border-l border-slate-700 pl-4">
-          <div className="mb-1 text-xs text-slate-500">
+          <div className="mb-1 text-xs text-muted-foreground">
             <span>{comment.author ?? "[deleted]"}</span>{" · "}
             <span suppressHydrationWarning>{formatRelativeTime(comment.created_at)}</span>
           </div>

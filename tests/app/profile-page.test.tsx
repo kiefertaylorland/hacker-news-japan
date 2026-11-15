@@ -61,10 +61,12 @@ describe("profile page", () => {
     expect(screen.getByRole("link", { name: "upvoted submissions" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "favorite submissions" })).not.toHaveAttribute("aria-current");
     expect(screen.getByRole("heading", { name: "Upvoted submissions" })).toBeInTheDocument();
-    const item = screen.getByRole("listitem");
+    const item = within(screen.getByRole("region", { name: "Reading activity" })).getByRole("article");
     expect(within(item).getByRole("link", { name: "Upvoted story" })).toHaveAttribute("href", "https://www.example.com/post");
-    expect(item).toHaveTextContent("(example.com)");
-    expect(item).toHaveTextContent(/42 points by alice \| .+ ago \| 3 comments$/);
+    expect(item).toHaveTextContent("example.com");
+    expect(within(item).getByRole("button", { name: "Upvote" })).toHaveTextContent("42");
+    expect(item).toHaveTextContent("alice");
+    expect(item.closest("[aria-busy]")).toHaveAttribute("aria-busy", "false");
     expect(within(item).getByRole("link", { name: "3 comments" })).toHaveAttribute("href", "/stories/11");
   });
 
@@ -72,10 +74,12 @@ describe("profile page", () => {
     await renderServerPage(page("favorite-submissions"));
     expect(listBookmarks).toHaveBeenCalledWith(authUser.id);
     expect(screen.getByRole("heading", { name: "Favorite submissions" })).toBeInTheDocument();
-    const item = screen.getByRole("listitem");
+    const item = within(screen.getByRole("region", { name: "Reading activity" })).getByRole("article");
     expect(within(item).getByRole("link", { name: "Favorite story" })).toHaveAttribute("href", "https://news.ycombinator.com/item?id=12");
     expect(item).not.toHaveTextContent("(");
-    expect(item).toHaveTextContent("0 points by alice");
+    expect(within(item).getByRole("button", { name: "Upvote" })).toHaveTextContent("0");
+    expect(item).toHaveTextContent("alice");
+    expect(item.closest("[aria-busy]")).toHaveAttribute("aria-busy", "false");
     expect(within(item).getByRole("link", { name: "0 comments" })).toBeInTheDocument();
   });
 
@@ -84,7 +88,7 @@ describe("profile page", () => {
     expect(listUpvotedComments).toHaveBeenCalledWith(authUser.id);
     expect(screen.getAllByRole("link", { name: "comments" })[0]).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("heading", { name: "Upvoted comments" })).toBeInTheDocument();
-    const item = screen.getByRole("listitem");
+    const item = within(screen.getByRole("region", { name: "Reading activity" })).getByRole("listitem");
     expect(within(item).getByText("<b>Great</b> post")).toBeInTheDocument();
     expect(item).toHaveTextContent(/^alice · .+ ago · on: discussion<b>Great<\/b> post$/);
     expect(within(item).getByRole("link", { name: "discussion" })).toHaveAttribute("href", "/stories/456");
