@@ -5,6 +5,8 @@ import { SignInPrompt } from "@/components/auth/SignInPrompt";
 import { UserMenu } from "@/components/auth/UserMenu";
 import { ErrorAlert } from "@/components/layout/ErrorAlert";
 import { PageShell } from "@/components/layout/PageShell";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ProfileCommentList, ProfileStoryList } from "@/components/profile/ProfileLists";
 import { getCurrentUser } from "@/lib/auth/user";
 import { listBookmarks } from "@/lib/bookmarks/queries";
@@ -26,7 +28,11 @@ type View = keyof typeof VIEWS;
 interface Props { searchParams: Promise<{ view?: string | string[] }> }
 
 export default function ProfilePage({ searchParams }: Props) {
-  return <Suspense fallback={<p role="status">Loading profile…</p>}><ProfileContent searchParams={searchParams} /></Suspense>;
+  return (
+    <Suspense fallback={<PageShell><div role="status" className="space-y-5"><span className="sr-only">Loading profile…</span><Skeleton className="h-24 w-full" /><Skeleton className="h-40 w-full" /></div></PageShell>}>
+      <ProfileContent searchParams={searchParams} />
+    </Suspense>
+  );
 }
 
 async function ProfileContent({ searchParams }: Props) {
@@ -40,32 +46,33 @@ async function ProfileContent({ searchParams }: Props) {
     [createdAt, list] = await Promise.all([getAccountCreatedAt(), view && VIEWS[view].load(user.id)]);
   } catch {
     const href = view ? `/profile?view=${view}` : "/profile";
-    return <PageShell><ErrorAlert>Could not load your profile. Please try again.</ErrorAlert><Link href={href}>Retry</Link></PageShell>;
+    return <PageShell><h1 className="text-3xl font-semibold">Profile unavailable</h1><ErrorAlert>Could not load your profile. Please try again.</ErrorAlert><a href={href} className="inline-flex min-h-11 items-center text-hn hover:underline">Retry</a></PageShell>;
   }
   const viewLink = (target: View, label: string) => (
     <Link href={`/profile?view=${target}`} aria-current={view === target ? "page" : undefined}
-      className="underline-offset-2 hover:text-hn hover:underline aria-[current=page]:text-hn">{label}</Link>
+      className="inline-flex min-h-11 items-center rounded px-2 underline-offset-4 hover:bg-accent hover:text-hn hover:underline aria-[current=page]:bg-accent aria-[current=page]:text-hn">{label}</Link>
   );
   const row = (label: string, value: ReactNode) => (
-    <tr><th scope="row" className="pr-4 text-left align-top font-normal text-slate-500">{label}</th><td>{value}</td></tr>
+    <tr><th scope="row" className="w-20 pr-4 text-left align-top font-normal text-muted-foreground">{label}</th><td className="min-w-0 [overflow-wrap:anywhere]">{value}</td></tr>
   );
   return (
     <PageShell>
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <Link href="/" className="text-sm text-hn">Back to search</Link>
-        <UserMenu user={user} next="/profile" />
-      </div>
-      <h1 className="text-2xl font-semibold">Profile</h1>
-      <table aria-label="Profile" className="text-sm">
+      <PageHeader
+        eyebrow={<Link href="/" className="inline-flex min-h-11 items-center text-sm text-hn hover:underline">Back to search</Link>}
+        title={<h1 className="text-3xl font-semibold tracking-tight">Profile</h1>}
+        description="Your account and private reading activity."
+        actions={<UserMenu user={user} next="/profile" />}
+      />
+      <table aria-label="Profile" className="w-full max-w-2xl table-fixed border-separate border-spacing-y-2 rounded-lg border border-border bg-card p-4 text-sm sm:p-6">
         <tbody>
           {row("user:", user.name)}
           {row("created:", <time dateTime={createdAt}>{new Date(createdAt).toLocaleString("en-US", { dateStyle: "long", timeStyle: "long", timeZone: "UTC" })}</time>)}
-          {row("", <>{viewLink("upvoted-submissions", "upvoted submissions")} / {viewLink("upvoted-comments", "comments")} <span className="text-slate-500">(private)</span></>)}
-          {row("", <>{viewLink("favorite-submissions", "favorite submissions")} / {viewLink("favorite-comments", "comments")} <span className="text-slate-500">(private)</span></>)}
+          {row("", <>{viewLink("upvoted-submissions", "upvoted submissions")} / {viewLink("upvoted-comments", "comments")} <span className="text-muted-foreground">(private)</span></>)}
+          {row("", <>{viewLink("favorite-submissions", "favorite submissions")} / {viewLink("favorite-comments", "comments")} <span className="text-muted-foreground">(private)</span></>)}
         </tbody>
       </table>
       {view && (
-        <section className="space-y-4">
+        <section aria-label="Reading activity" className="space-y-4">
           <h2 className="text-lg font-semibold">{VIEWS[view].title}</h2>
           {list}
         </section>

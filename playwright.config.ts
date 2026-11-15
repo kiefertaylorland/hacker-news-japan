@@ -1,7 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
 import { STORAGE_STATE } from "./tests/e2e/storageState";
 
-const FAKE_GITHUB_PORT = 4010;
+const FAKE_GITHUB_PORT = Number(process.env.FAKE_GITHUB_PORT ?? 4010);
+const PORT = Number(process.env.PORT ?? 3000);
+const BASE_URL = `http://localhost:${PORT}`;
 
 /**
  * Browser E2E against a real local Supabase stack. Run via `npm run test:e2e`
@@ -16,7 +18,7 @@ export default defineConfig({
   globalSetup: "./tests/e2e/global-setup.ts",
   globalTeardown: "./tests/e2e/global-teardown.ts",
   use: {
-    baseURL: "http://localhost:3000",
+    baseURL: BASE_URL,
     trace: "on-first-retry",
     ...devices["Desktop Chrome"],
     // GoTrue (in Docker) and the browser (on the host) must use the same fake-GitHub
@@ -27,7 +29,7 @@ export default defineConfig({
     { name: "setup", testMatch: /auth\.setup\.ts/ },
     {
       name: "bookmarks",
-      testMatch: /(?:bookmarks|comments|upvotes|profile)\.spec\.ts/,
+      testMatch: /(?:bookmarks|comments|upvotes|profile|editorial)\.spec\.ts/,
       dependencies: ["setup"],
       use: { storageState: STORAGE_STATE },
     },
@@ -43,8 +45,8 @@ export default defineConfig({
       env: { FAKE_GITHUB_PORT: String(FAKE_GITHUB_PORT) },
     },
     {
-      command: "npm run build && npm run start",
-      url: "http://localhost:3000",
+      command: `npm run build && npm run start -- --port ${PORT}`,
+      url: BASE_URL,
       timeout: 240_000,
     },
   ],

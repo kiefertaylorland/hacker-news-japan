@@ -97,7 +97,11 @@
     --secondary-foreground: 214 32% 91%;
 
     --muted: 240 5% 16%;
-    --muted-foreground: 240 5% 65%;
+    --muted-foreground: 240 5% 72%;
+    --motion-fast: 140ms;
+    --motion-normal: 180ms;
+    --motion-slow: 220ms;
+    --motion-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
 
     --accent: 240 5% 18%;
     --accent-foreground: 214 32% 96%;
@@ -132,13 +136,7 @@
 
   body {
     @apply text-foreground;
-    background:
-      linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px),
-      radial-gradient(circle at 12% 0%, rgba(255, 102, 0, 0.12), transparent 28rem),
-      linear-gradient(145deg, rgb(14, 14, 17), rgb(22, 22, 26) 55%, rgb(14, 14, 17));
-    background-attachment: fixed;
-    background-size: 48px 48px, 48px 48px, auto, auto;
+    background: hsl(var(--background));
   }
 }
 
@@ -151,20 +149,20 @@
    Keep transforms opt-in so reduced-motion also removes hover displacement. */
 @media (prefers-reduced-motion: no-preference) {
   .story-motion {
-    transition: transform 220ms ease-out, border-color 180ms ease-out,
-      box-shadow 220ms ease-out;
+    transition: transform var(--motion-slow) ease-out, border-color var(--motion-normal) ease-out,
+      box-shadow var(--motion-slow) ease-out;
   }
 
   .story-motion:focus-within {
-    transform: translateY(-2px);
+    border-color: hsl(var(--ring));
   }
 
   .button-motion,
   .filter-motion,
   .vote-motion {
-    transition: transform 140ms ease-out, color 160ms ease-out,
-      background-color 160ms ease-out, border-color 160ms ease-out,
-      box-shadow 160ms ease-out;
+    transition: transform var(--motion-fast) ease-out, color var(--motion-fast) ease-out,
+      background-color var(--motion-fast) ease-out, border-color var(--motion-fast) ease-out,
+      box-shadow var(--motion-fast) ease-out;
   }
 
   .button-motion:active:not(:disabled):not([aria-disabled="true"]),
@@ -174,12 +172,12 @@
   }
 
   .search-motion {
-    transition: border-color 180ms ease-out, box-shadow 180ms ease-out,
-      background-color 180ms ease-out;
+    transition: border-color var(--motion-normal) ease-out, box-shadow var(--motion-normal) ease-out,
+      background-color var(--motion-normal) ease-out;
   }
 
   .search-motion svg {
-    transition: transform 180ms ease-out, color 180ms ease-out;
+    transition: transform var(--motion-normal) ease-out, color var(--motion-normal) ease-out;
   }
 
   .search-motion:focus-within svg {
@@ -188,7 +186,7 @@
 
   .bookmark-motion svg,
   .vote-motion svg {
-    transition: transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: transform var(--motion-slow) cubic-bezier(0.2, 0.8, 0.2, 1);
   }
 
   .bookmark-motion[aria-pressed="true"] svg {
@@ -201,7 +199,35 @@
 
   @media (hover: hover) and (pointer: fine) {
     .story-motion:hover {
-      transform: translateY(-3px);
+      background-color: hsl(var(--accent));
     }
   }
+}
+
+/* Editorial surfaces: hierarchy comes from content, spacing and rules. */
+@layer base {
+  :where(a, button, input, textarea, select, [tabindex]):focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 4px;
+  }
+  button, a, input, textarea { touch-action: manipulation; }
+  ::selection { background: hsl(var(--primary) / .3); color: white; }
+}
+.site-masthead { border-bottom: 1px solid hsl(var(--border)); background: hsl(var(--card)); }
+.nav-link { display: inline-flex; align-items: center; min-height: 44px; padding: .5rem .75rem; border-radius: var(--radius-sm); color: hsl(var(--muted-foreground)); }
+.nav-link:hover { color: hsl(var(--foreground)); background: hsl(var(--accent)); }
+.skip-link { position: fixed; top: .5rem; left: .5rem; transform: translateY(-180%); z-index: 50; background: hsl(var(--background)); padding: .75rem; }
+.skip-link:focus { transform: translateY(0); }
+.editorial-panel { border: 1px solid hsl(var(--border)); border-radius: var(--radius); background: hsl(var(--card)); }
+.story-list { display: flex; flex-direction: column; border-block: 1px solid hsl(var(--border)); }
+.story-list > * + * { border-top: 1px solid hsl(var(--border)); }
+.story-row { padding: 1rem .5rem; min-height: 128px; }
+.story-row h3 { text-wrap: pretty; }
+.reading-surface { max-width: 48rem; line-height: 1.75; }
+.reading-surface p, .reading-surface li { overflow-wrap: anywhere; }
+@media (prefers-reduced-motion: no-preference) {
+  .nav-link, .story-row { transition: background-color var(--motion-normal) var(--motion-ease), color var(--motion-fast) var(--motion-ease); }
+}
+@media (pointer: coarse) {
+  button, [role="combobox"] { min-height: 44px; min-width: 44px; }
 }

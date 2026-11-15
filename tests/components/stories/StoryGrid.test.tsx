@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { createElement } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { StoryCardSkeleton } from "@/components/stories/StoryCardSkeleton";
@@ -20,15 +21,9 @@ describe("StoryGrid", () => {
     render(createElement(StoryGrid, { stories: [sampleStory], isLoading: true }));
     const grid = screen.getByText("Building in Japan").closest("[aria-busy]");
     expect(grid).toHaveAttribute("aria-busy", "true");
-    expect(grid).toHaveClass(
-      "grid",
-      "grid-cols-1",
-      "gap-4",
-      "transition-opacity",
-      "md:grid-cols-2",
-      "xl:grid-cols-3",
-      "opacity-60"
-    );
+    expect(screen.getByRole("article", { name: sampleStory.title })).toBeVisible();
+    expect(screen.getByRole("link", { name: sampleStory.title })).toHaveAttribute("href", sampleStory.url);
+
   });
 
   it("treats an unsaved story as unsaved when no savedIds are provided", () => {
@@ -80,6 +75,29 @@ describe("StoryGrid", () => {
     expect(screen.getByRole("button", { name: "Remove bookmark" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Save story" })).toBeInTheDocument();
   });
+  it("renders a useful action in custom empty states", () => {
+    render(createElement(StoryGrid, { stories: [], isLoading: false, emptyTitle: "No matching stories", emptyDescription: "Clear the date range.", emptyAction: createElement("button", null, "Clear filters") }));
+    expect(screen.getByText("No matching stories")).toBeInTheDocument();
+    expect(screen.getByText("Clear the date range.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Clear filters" })).toBeInTheDocument();
+  });
+
+  it("passes pending and error state to only the affected story and preserves dedicated retry semantics", async () => {
+    const onRetrySave = vi.fn();
+    const onToggleSave = vi.fn();
+    const other = makeStory({ objectID: "999", title: "Other story" });
+    render(createElement(StoryGrid, { stories: [sampleStory, other], isLoading: false, pendingIds: [sampleStory.objectID], saveErrors: { "999": "Could not save Other story" }, onToggleSave, onRetrySave }));
+    const first = within(screen.getByRole("article", { name: sampleStory.title }));
+    const second = within(screen.getByRole("article", { name: other.title }));
+    expect(first.getByRole("button", { name: "Save story" })).toBeDisabled();
+    expect(first.queryByRole("alert")).not.toBeInTheDocument();
+    expect(second.getByRole("button", { name: "Save story" })).toBeEnabled();
+    expect(second.getByRole("alert")).toHaveTextContent("Could not save Other story");
+    await userEvent.setup().click(second.getByRole("button", { name: "Retry bookmark" }));
+    expect(onRetrySave).toHaveBeenCalledWith(other.objectID);
+    expect(onToggleSave).not.toHaveBeenCalled();
+  });
+
 });
 
 describe("StoryCardSkeleton", () => {

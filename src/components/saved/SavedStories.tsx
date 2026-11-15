@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { BookmarkStatus } from "@/components/stories/BookmarkStatus";
+import { Button } from "@/components/ui/button";
 import { ArrowLeftIcon } from "lucide-react";
 import { StoryGrid } from "@/components/stories/StoryGrid";
 import { UserMenu } from "@/components/auth/UserMenu";
@@ -21,28 +23,43 @@ export function SavedStories({ user, stories, recommendations }: SavedStoriesPro
   const bookmarks = useOptimisticBookmarks(stories.map((story) => story.objectID));
   const visibleStories = stories.filter((story) => bookmarks.savedIds.includes(story.objectID));
 
+  const toggle = (story: HNStory) => {
+    document.getElementById("saved-heading")?.focus();
+    bookmarks.toggle(story);
+  };
+  const retry = (id: string) => {
+    document.getElementById("saved-heading")?.focus();
+    bookmarks.retryFailed(id);
+  };
+  const recommendationStories = recommendations?.filter((story) => !bookmarks.savedIds.includes(story.objectID)) ?? [];
+
   return (
     <PageShell>
       <PageHeader
         eyebrow={
           <Link
             href="/"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-hn/80 hover:text-hn"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-hn hover:text-hn"
           >
             <ArrowLeftIcon className="h-3.5 w-3.5" />
             Back to search
           </Link>
         }
-        title={<h1 className="text-4xl font-bold tracking-tight text-slate-100">Saved stories</h1>}
+        title={<h1 id="saved-heading" tabIndex={-1} className="text-4xl font-bold tracking-tight text-slate-100">Saved stories</h1>}
         description="Stories you bookmarked, newest first."
         actions={<UserMenu user={user} next="/saved" />}
       />
 
+      <BookmarkStatus message={bookmarks.message} errors={bookmarks.errors} visibleIds={[...visibleStories, ...recommendationStories].map((story) => story.objectID)} onRetry={bookmarks.retryFailed} />
       <StoryGrid
         stories={visibleStories}
         isLoading={false}
         savedIds={bookmarks.savedIds}
-        onToggleSave={bookmarks.toggle}
+        pendingIds={bookmarks.pendingIds}
+        saveErrors={bookmarks.errors}
+        onRetrySave={retry}
+        onToggleSave={toggle}
+        emptyAction={<Button asChild variant="outline"><Link href="/">Browse stories</Link></Button>}
         emptyTitle="No saved stories yet"
         emptyDescription="Use the bookmark button on a story to save it here."
       />
@@ -52,16 +69,19 @@ export function SavedStories({ user, stories, recommendations }: SavedStoriesPro
           <h2 id="recommendations-heading" className="text-2xl font-bold tracking-tight text-slate-100">
             Recommended for you
           </h2>
-          <p className="text-sm text-slate-500">Japan stories related to topics in your saved posts.</p>
+          <p className="text-sm text-muted-foreground">Japan stories related to topics in your saved posts.</p>
         </div>
         {recommendations === null ? (
-          <ErrorAlert>Could not load recommendations. Refresh the page to try again.</ErrorAlert>
+          <ErrorAlert><p>Could not load recommendations.</p><a href="/saved" className="inline-flex min-h-11 items-center underline underline-offset-4">Retry recommendations</a></ErrorAlert>
         ) : (
           <StoryGrid
-            stories={recommendations.filter((story) => !bookmarks.savedIds.includes(story.objectID))}
+            stories={recommendationStories}
             isLoading={false}
             savedIds={bookmarks.savedIds}
-            onToggleSave={bookmarks.toggle}
+            pendingIds={bookmarks.pendingIds}
+            saveErrors={bookmarks.errors}
+            onRetrySave={retry}
+            onToggleSave={toggle}
             emptyTitle={stories.length === 0 ? "Save stories to get recommendations" : "No recommendations yet"}
             emptyDescription="Save more stories about topics you enjoy to discover related posts."
           />

@@ -7,7 +7,7 @@ const visibleText = (page: Page, text: string) => page.getByText(text, { exact: 
 test("profile shows the user, creation time, and upvoted and favorite submissions and comments", async ({ signedInPage: page }) => {
   await page.goto("/");
   // Not the first card: upvotes.spec.ts votes on that one in parallel and asserts its exact count.
-  const card = page.locator("div.group").nth(2);
+  const card = page.locator("article.group").nth(2);
   const title = (await card.getByRole("link").first().textContent())!.trim();
   await expect(card.getByRole("button", { name: "Upvote", exact: true })).toBeEnabled();
   await card.getByRole("button", { name: "Upvote", exact: true }).click();
@@ -32,19 +32,30 @@ test("profile shows the user, creation time, and upvoted and favorite submission
 
   await page.getByRole("link", { name: /@example\.com$/ }).click();
   await expect(page).toHaveURL(/\/profile$/);
-  const profile = page.getByRole("table", { name: "Profile" });
+  const profile = page.getByRole("table", { name: "Profile" }).filter({ visible: true });
   await expect(profile.getByRole("row", { name: /^user: integration-test-/ })).toBeVisible();
   await expect(profile.locator("time")).toHaveText(/^\w+ \d{1,2}, \d{4} at \d{1,2}:\d{2}:\d{2} [AP]M UTC$/);
 
-  await profile.getByRole("link", { name: "upvoted submissions" }).click();
-  await expect(page.getByRole("listitem").getByRole("link", { name: title, exact: true }).filter({ visible: true })).toBeVisible();
-  await profile.getByRole("link", { name: "favorite submissions" }).click();
-  await expect(page.getByRole("heading", { name: "Favorite submissions" })).toBeVisible();
-  await expect(page.getByRole("listitem").getByRole("link", { name: title, exact: true }).filter({ visible: true })).toBeVisible();
-  await profile.getByRole("link", { name: "comments" }).first().click();
-  await expect(page.getByRole("heading", { name: "Upvoted comments" })).toBeVisible();
+  // Scope view selection by its URL: comments have two distinct destinations,
+  // and the controls remain usable if their presentation moves out of the account table.
+  const selectView = async (view: string) => {
+    await page.locator(`a[href="/profile?view=${view}"]`).filter({ visible: true }).click();
+    await expect(page).toHaveURL(new RegExp(`/profile\\?view=${view}$`));
+    await expect(page.locator(`a[href="/profile?view=${view}"]`).filter({ visible: true })).toHaveAttribute("aria-current", "page");
+  };
+  const activity = page.getByRole("region", { name: "Reading activity" }).filter({ visible: true });
+  await selectView("upvoted-submissions");
+  await expect(activity.getByRole("heading", { name: "Upvoted submissions" })).toBeVisible();
+  await expect(activity.getByRole("article", { name: title, exact: true }).getByRole("link", { name: title, exact: true })).toBeVisible();
+  await selectView("favorite-submissions");
+  await expect(activity.getByRole("heading", { name: "Favorite submissions" })).toBeVisible();
+  await expect(activity.getByRole("article", { name: title, exact: true }).getByRole("link", { name: title, exact: true })).toBeVisible();
+  await selectView("upvoted-comments");
+  await expect(activity.getByRole("heading", { name: "Upvoted comments" })).toBeVisible();
+  await expect(activity.getByRole("listitem").filter({ hasText: body })).toBeVisible();
   await expect(visibleText(page, body)).toBeVisible();
-  await profile.getByRole("link", { name: "comments" }).last().click();
-  await expect(page.getByRole("heading", { name: "Favorite comments" })).toBeVisible();
+  await selectView("favorite-comments");
+  await expect(activity.getByRole("heading", { name: "Favorite comments" })).toBeVisible();
+  await expect(activity.getByRole("listitem").filter({ hasText: body })).toBeVisible();
   await expect(visibleText(page, body)).toBeVisible();
 });

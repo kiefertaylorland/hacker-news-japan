@@ -3,7 +3,7 @@ import { test } from "./helpers/localSession";
 
 test("upvote once and retain the count and selected state after reload", async ({ signedInPage: page }) => {
   await page.goto("/");
-  const card = page.locator("div.group").first();
+  const card = page.locator("article.group").first();
   const title = (await card.getByRole("link").first().textContent())?.trim();
   expect(title).toBeTruthy();
   const vote = card.getByRole("button", { name: "Upvote", exact: true });
@@ -13,7 +13,7 @@ test("upvote once and retain the count and selected state after reload", async (
   await expect(card.getByRole("button", { name: "Upvoted", exact: true })).toHaveAttribute("aria-pressed", "true");
   await expect(card.getByRole("button", { name: "Upvoted", exact: true })).toHaveText(String(points + 1));
   await page.reload();
-  const reloaded = page.locator("div.group", { hasText: title }).first();
+  const reloaded = page.locator("article.group", { hasText: title }).first();
   await expect(reloaded.getByRole("button", { name: "Upvoted", exact: true })).toHaveText(String(points + 1));
   await expect(reloaded.getByRole("button", { name: "Upvoted", exact: true })).toBeDisabled();
 });

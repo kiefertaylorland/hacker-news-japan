@@ -49,6 +49,16 @@ describe("saved page", () => {
     expect(screen.getByText("Building robots in Japan")).toBeInTheDocument();
   });
 
+  it("offers retry when saved stories cannot load", async () => {
+    mockedGetCurrentUser.mockResolvedValue(authUser);
+    const { from } = mockQueryBuilder({ error: { message: "database unavailable" } });
+    vi.mocked(createClient).mockResolvedValue({ from } as never);
+    await renderServerPage(SavedPage());
+    expect(screen.getByRole("alert")).toHaveTextContent("bookmarks have not been changed");
+    expect(screen.getByRole("link", { name: "Retry saved stories" })).toHaveAttribute("href", "/saved");
+    expect(getRecommendedStories).not.toHaveBeenCalled();
+  });
+
   it("keeps saved stories available when recommendations fail", async () => {
     mockedGetCurrentUser.mockResolvedValue(authUser);
     const { from } = mockQueryBuilder({ data: [sampleBookmarkRow] });
@@ -56,6 +66,6 @@ describe("saved page", () => {
     vi.mocked(getRecommendedStories).mockRejectedValue(new Error("Algolia unavailable"));
     await renderServerPage(SavedPage());
     expect(screen.getByText(sampleStory.title)).toBeInTheDocument();
-    expect(screen.getByRole("alert")).toHaveTextContent("Could not load recommendations. Refresh the page to try again.");
+    expect(screen.getByRole("alert")).toHaveTextContent("Could not load recommendations.");
   });
 });

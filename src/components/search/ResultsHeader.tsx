@@ -10,6 +10,10 @@ interface ResultsHeaderProps {
 }
 
 export function ResultsHeader({ query, results, isLoading, sortBy }: ResultsHeaderProps) {
+  if (isLoading && results) {
+    return <p className="min-h-6 text-sm text-muted-foreground">Updating stories… Previous results remain available.</p>;
+  }
+
   if (isLoading) {
     return <Skeleton className="h-6 w-48" />;
   }
@@ -24,7 +28,7 @@ export function ResultsHeader({ query, results, isLoading, sortBy }: ResultsHead
   const isWindowed = sortBy !== undefined && CLIENT_SORTS.has(sortBy);
 
   return (
-    <div className="flex animate-fade-in items-center justify-between gap-4 pt-1">
+    <div className="flex items-center justify-between gap-4 pt-1">
       <div className="flex min-w-0 items-center gap-3">
         <div className="h-4 w-0.5 shrink-0 rounded-full bg-hn" />
         <p className="min-w-0 wrap-break-word text-sm text-slate-400">

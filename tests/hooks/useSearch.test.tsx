@@ -540,14 +540,14 @@ describe("useSearch", () => {
     await act(async () => pending.resolve(response));
   });
 
-  it("clears previously loaded results when a later request fails", async () => {
+  it("retains previously loaded results when a later request fails", async () => {
     mockedSearchStories.mockResolvedValueOnce(response).mockRejectedValueOnce(new Error("boom"));
     const { result } = renderHook(() => useSearch());
     await waitFor(() => expect(result.current.results).toBe(response));
 
     await act(async () => result.current.setPage(1));
     await waitFor(() => expect(result.current.error).toBe("boom"));
-    expect(result.current.results).toBeNull();
+    expect(result.current.results).toBe(response);
   });
 
   it("does not repeat replaceState after the debounced query has already synced the URL", async () => {
@@ -684,4 +684,71 @@ describe("useSearch", () => {
       expect(result.current.isLoading).toBe(false);
     });
   });
+  it("retries the same failed request without changing its URL or clearing previous results", async () => {
+    mockedSearchStories.mockResolvedValueOnce(response).mockRejectedValueOnce(new Error("offline"));
+    const { result } = renderHook(() => useSearch());
+    await waitFor(() => expect(result.current.results).toBe(response));
+    await act(async () => result.current.setPage(1));
+    expect(result.current.error).toBe("offline");
+    const next = deferredResponse();
+    mockedSearchStories.mockReturnValueOnce(next.promise);
+    act(() => result.current.retry());
+    expect(result.current.isLoading).toBe(true);
+    expect(result.current.error).toBeNull();
+    expect(result.current.results).toBe(response);
+    expect(pushState).toHaveBeenCalledTimes(1);
+    expect(mockedSearchStories).toHaveBeenLastCalledWith(expect.objectContaining({ page: 1 }), expect.any(AbortSignal));
+    const recovered = { ...response, page: 1 };
+    await act(async () => next.resolve(recovered));
+    expectSettledResults(result, recovered);
+  });
+
+  it("retries seeded results and invalidates a cached client-sort window", async () => {
+    const fresh = { ...response, nbHits: 123 };
+    mockedSearchStories.mockResolvedValue(fresh);
+    const { result, unmount } = renderHook(() => useSearch(response));
+    await act(async () => result.current.retry());
+    expect(mockedSearchStories).toHaveBeenCalledTimes(1);
+    expectSettledResults(result, fresh);
+    unmount();
+    currentSearchParams = new URLSearchParams("sortBy=points");
+    mockedFetchSearchWindow.mockResolvedValueOnce(response).mockResolvedValueOnce(fresh);
+    const sorted = renderHook(() => useSearch());
+    await waitFor(() => expect(sorted.result.current.isLoading).toBe(false));
+    await act(async () => sorted.result.current.retry());
+    expect(mockedFetchSearchWindow).toHaveBeenCalledTimes(2);
+    expect(sorted.result.current.results).toEqual(pageSearchWindow(fresh, 0));
+  });
+
+  it("resets query, filters, sorting, and pagination together to the default URL", async () => {
+    currentSearchParams = new URLSearchParams("query=tokyo&storyType=job&dateRange=week&sortBy=points&page=2");
+    mockedFetchSearchWindow.mockResolvedValue(response);
+    mockedSearchStories.mockResolvedValue(response);
+    const { result } = renderHook(() => useSearch());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    act(() => result.current.reset());
+    expectParamsState(result, { query: "", storyType: "all", dateRange: "all", sortBy: "date_desc", page: 0 });
+    expect(pushState).toHaveBeenLastCalledWith(null, "", "/?query=&storyType=all&dateRange=all&sortBy=date_desc&page=0");
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(mockedSearchStories).toHaveBeenCalledWith(expect.objectContaining({ query: "", page: 0 }), expect.any(AbortSignal));
+  });
+
+  it("can retry again after the first retry also fails without changing the search parameters", async () => {
+    mockedSearchStories
+      .mockRejectedValueOnce(new Error("Initial request failed"))
+      .mockRejectedValueOnce(new Error("First retry failed"))
+      .mockResolvedValueOnce(response);
+    const { result } = renderHook(() => useSearch());
+    await waitFor(() => expect(result.current.error).toBe("Initial request failed"));
+    await act(async () => result.current.retry());
+    expect(result.current.error).toBe("First retry failed");
+    expect(mockedSearchStories).toHaveBeenCalledTimes(2);
+    await act(async () => result.current.retry());
+    expect(mockedSearchStories).toHaveBeenCalledTimes(3);
+    expectSettledResults(result, response);
+    expect(result.current.error).toBeNull();
+    expect(pushState).not.toHaveBeenCalled();
+    expect(replaceState).not.toHaveBeenCalled();
+  });
+
 });

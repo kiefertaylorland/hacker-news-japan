@@ -4,44 +4,18 @@ import { useOptimisticBookmarks } from "@/hooks/useOptimisticBookmarks";
 import { toggleBookmark } from "@/lib/bookmarks/actions";
 import { makeStory, sampleStory } from "../fixtures/stories";
 
-vi.mock("@/lib/bookmarks/actions", () => ({
-  toggleBookmark: vi.fn(),
-}));
-
+vi.mock("@/lib/bookmarks/actions", () => ({ toggleBookmark: vi.fn() }));
 const mockedToggleBookmark = vi.mocked(toggleBookmark);
 
 function deferred() {
   let resolve!: () => void;
-  const promise = new Promise<void>((r) => {
-    resolve = r;
-  });
-  return { promise, resolve };
+  let reject!: (reason: Error) => void;
+  const promise = new Promise<void>((done, fail) => { resolve = done; reject = fail; });
+  return { promise, resolve, reject };
 }
 
-function renderWithSavedIds(savedIds: string[] = []) {
-  return renderHook(() => useOptimisticBookmarks(savedIds));
-}
-
-function renderWithRerenderableSavedIds() {
-  return renderHook(
-    ({ savedIds }: { savedIds: string[] }) => useOptimisticBookmarks(savedIds),
-    { initialProps: { savedIds: [] as string[] } }
-  );
-}
-
-function toggleOnce(result: { current: ReturnType<typeof useOptimisticBookmarks> }, story = sampleStory) {
-  act(() => {
-    result.current.toggle(story);
-  });
-}
-
-async function toggleAndExpectCallCount(
-  result: { current: ReturnType<typeof useOptimisticBookmarks> },
-  count: number,
-  story = sampleStory
-) {
-  toggleOnce(result, story);
-  await waitFor(() => expect(mockedToggleBookmark).toHaveBeenCalledTimes(count));
+function renderBookmarks(savedIds: string[] = []) {
+  return renderHook(({ ids }) => useOptimisticBookmarks(ids), { initialProps: { ids: savedIds } });
 }
 
 describe("useOptimisticBookmarks", () => {
@@ -50,97 +24,166 @@ describe("useOptimisticBookmarks", () => {
     mockedToggleBookmark.mockResolvedValue(undefined);
   });
 
-  it("bases rapid toggles on the last intended saved state", async () => {
-    const { result } = renderWithSavedIds();
-
-    act(() => {
-      result.current.toggle(sampleStory);
-      result.current.toggle(sampleStory);
-    });
-
-    await waitFor(() => expect(mockedToggleBookmark).toHaveBeenCalledTimes(2));
-    expect(mockedToggleBookmark).toHaveBeenNthCalledWith(1, sampleStory, false);
-    expect(mockedToggleBookmark).toHaveBeenNthCalledWith(2, sampleStory, true);
+  it("starts idle without pending operations, errors or a status announcement", () => {
+    const { result } = renderBookmarks();
+    expect(result.current.pendingIds).toEqual([]);
+    expect(result.current.errors).toEqual({});
+    expect(result.current.message).toBe("");
   });
 
-  it("keeps a stable toggle identity across rerenders", () => {
-    const savedIds: string[] = [];
-    const { result, rerender } = renderHook(() => useOptimisticBookmarks(savedIds));
-    const first = result.current.toggle;
-    rerender();
-    expect(result.current.toggle).toBe(first);
+  it("prevents duplicate requests synchronously while showing the optimistic saved state", async () => {
+    const pending = deferred();
+    mockedToggleBookmark.mockReturnValue(pending.promise);
+    const { result } = renderBookmarks();
+    act(() => { result.current.toggle(sampleStory); result.current.toggle(sampleStory); });
+    expect(mockedToggleBookmark).toHaveBeenCalledTimes(1);
+    expect(mockedToggleBookmark).toHaveBeenCalledWith(sampleStory, false);
+    expect(result.current.pendingIds).toEqual([sampleStory.objectID]);
+    expect(result.current.savedIds).toEqual([sampleStory.objectID]);
+    expect(result.current.message).toBe("Saving story…");
+    await act(async () => pending.resolve());
+    expect(result.current.pendingIds).toEqual([]);
+    expect(result.current.message).toBe("Story saved.");
   });
 
-  it("removes only the toggled id when unsaving, keeping other saved ids", async () => {
-    const { result } = renderWithSavedIds(["other", sampleStory.objectID]);
-
-    toggleOnce(result);
-
-    await waitFor(() => expect(result.current.savedIds).toEqual(["other"]));
+  it("keeps a stable toggle identity across unchanged rerenders", () => {
+    const ids: string[] = [];
+    const { result, rerender } = renderBookmarks(ids);
+    const toggle = result.current.toggle;
+    rerender({ ids });
+    expect(result.current.toggle).toBe(toggle);
   });
 
-  it("adds the toggled id when saving", async () => {
-    const { result } = renderWithSavedIds();
-
-    toggleOnce(result);
-
-    await waitFor(() => expect(result.current.savedIds).toEqual([sampleStory.objectID]));
+  it("optimistically removes only the selected bookmark and announces completion", async () => {
+    const pending = deferred();
+    mockedToggleBookmark.mockReturnValue(pending.promise);
+    const { result } = renderBookmarks(["other", sampleStory.objectID]);
+    act(() => result.current.toggle(sampleStory));
+    expect(result.current.savedIds).toEqual(["other"]);
+    expect(result.current.message).toBe("Removing bookmark…");
+    expect(mockedToggleBookmark).toHaveBeenCalledWith(sampleStory, true);
+    await act(async () => pending.resolve());
+    expect(result.current.message).toBe("Bookmark removed.");
+    expect(result.current.pendingIds).toEqual([]);
   });
 
-  it("clears the pending flag after settling so a later toggle uses the settled state", async () => {
-    const { result } = renderWithSavedIds();
-
-    await toggleAndExpectCallCount(result, 1);
-    expect(mockedToggleBookmark).toHaveBeenNthCalledWith(1, sampleStory, false);
-
-    // With no parent update to `savedIds`, the settled optimistic state reverts to [].
-    await waitFor(() => expect(result.current.savedIds).toEqual([]));
-
-    await toggleAndExpectCallCount(result, 2);
-    // If the pending flag were never cleared, this would incorrectly read as already-saved.
-    expect(mockedToggleBookmark).toHaveBeenNthCalledWith(2, sampleStory, false);
+  it.each([false, true])("rolls back a failed mutation from saved=%s and retries using the restored state", async (saved) => {
+    const first = deferred();
+    const retry = deferred();
+    mockedToggleBookmark.mockReturnValueOnce(first.promise).mockReturnValueOnce(retry.promise);
+    const ids = saved ? [sampleStory.objectID] : [];
+    const { result } = renderBookmarks(ids);
+    act(() => result.current.toggle(sampleStory));
+    expect(result.current.savedIds.includes(sampleStory.objectID)).toBe(!saved);
+    await act(async () => first.reject(new Error("offline")));
+    expect(result.current.savedIds).toEqual(ids);
+    expect(result.current.pendingIds).toEqual([]);
+    expect(result.current.errors[sampleStory.objectID]).toContain("previous saved state has been restored");
+    expect(result.current.message).toBe("");
+    act(() => result.current.retryFailed(sampleStory.objectID));
+    expect(result.current.errors).toEqual({});
+    expect(mockedToggleBookmark).toHaveBeenNthCalledWith(2, sampleStory, saved);
+    await act(async () => retry.resolve());
+    expect(result.current.errors).toEqual({});
+    expect(result.current.message).toBe(saved ? "Bookmark removed." : "Story saved.");
   });
 
-  it("keeps a newer pending intent when an older overlapping toggle settles and the list revalidates", async () => {
+  it("allows different stories to save concurrently and clears only the settled lock", async () => {
     const first = deferred();
     const second = deferred();
-    mockedToggleBookmark.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise).mockResolvedValue(undefined);
-
-    const { result, rerender } = renderWithRerenderableSavedIds();
-
-    act(() => {
-      result.current.toggle(sampleStory); // save intent, isSaved arg = false
-    });
-    act(() => {
-      result.current.toggle(sampleStory); // unsave intent, isSaved arg = true
-    });
-    expect(mockedToggleBookmark).toHaveBeenNthCalledWith(1, sampleStory, false);
-    expect(mockedToggleBookmark).toHaveBeenNthCalledWith(2, sampleStory, true);
-
-    // The first (older) toggle settles while the second is still pending; its cleanup must not
-    // clobber the second toggle's still-pending intent.
+    const other = makeStory({ objectID: "999" });
+    mockedToggleBookmark.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
+    const { result } = renderBookmarks();
+    act(() => { result.current.toggle(sampleStory); result.current.toggle(other); });
+    expect(mockedToggleBookmark).toHaveBeenCalledTimes(2);
+    expect(result.current.pendingIds).toEqual([sampleStory.objectID, other.objectID]);
+    expect(result.current.savedIds).toEqual([sampleStory.objectID, other.objectID]);
     await act(async () => first.resolve());
-
-    // Revalidation lands mid-flight: the server confirms the *first* toggle's effect, which
-    // resets the optimistic baseline out from under the still-pending second toggle.
-    rerender({ savedIds: [sampleStory.objectID] });
-
-    // A correctly-preserved pending flag means this toggle still sees the second toggle's
-    // "now unsaved" intent, not the revalidated (and now stale) optimistic baseline.
-    await toggleAndExpectCallCount(result, 3);
-    expect(mockedToggleBookmark).toHaveBeenNthCalledWith(3, sampleStory, false);
-
+    expect(result.current.pendingIds).toEqual([other.objectID]);
+    act(() => result.current.toggle(other));
+    expect(mockedToggleBookmark).toHaveBeenCalledTimes(2);
     await act(async () => second.resolve());
+    expect(result.current.pendingIds).toEqual([]);
   });
 
-  it("uses the latest optimistic ids for a fresh toggle after savedIds changes", async () => {
-    const nowSaved = "999";
-    const story = makeStory({ objectID: nowSaved });
-    const { result, rerender } = renderWithRerenderableSavedIds();
-
-    rerender({ savedIds: [nowSaved] });
-
-    await toggleAndExpectCallCount(result, 1, story);
-    expect(mockedToggleBookmark).toHaveBeenCalledWith(story, true);
+  it("keeps errors on one story when a different story succeeds", async () => {
+    mockedToggleBookmark.mockRejectedValueOnce(new Error("offline"));
+    const { result } = renderBookmarks();
+    await act(async () => result.current.toggle(sampleStory));
+    const error = result.current.errors[sampleStory.objectID];
+    await act(async () => result.current.toggle(makeStory({ objectID: "999" })));
+    expect(result.current.errors[sampleStory.objectID]).toBe(error);
+    expect(result.current.errors["999"]).toBeUndefined();
   });
+
+  it("uses revalidated saved ids for the next operation after a request settles", async () => {
+    const { result, rerender } = renderBookmarks();
+    await act(async () => result.current.toggle(sampleStory));
+    rerender({ ids: [sampleStory.objectID] });
+    await act(async () => result.current.toggle(sampleStory));
+    await waitFor(() => expect(mockedToggleBookmark).toHaveBeenNthCalledWith(2, sampleStory, true));
+  });
+  it("rolls back one failed story while another story remains pending and can retry independently", async () => {
+    const first = deferred();
+    const second = deferred();
+    const retry = deferred();
+    const other = makeStory({ objectID: "999" });
+    mockedToggleBookmark.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise).mockReturnValueOnce(retry.promise);
+    const { result } = renderBookmarks();
+    act(() => { result.current.toggle(sampleStory); result.current.toggle(other); });
+    await act(async () => first.reject(new Error("offline")));
+    expect(result.current.savedIds).toEqual([other.objectID]);
+    expect(result.current.pendingIds).toEqual([other.objectID]);
+    expect(result.current.errors[sampleStory.objectID]).toContain("previous saved state has been restored");
+    act(() => result.current.toggle(sampleStory));
+    expect(mockedToggleBookmark).toHaveBeenNthCalledWith(3, sampleStory, false);
+    expect(result.current.errors[sampleStory.objectID]).toBeUndefined();
+    expect(result.current.pendingIds).toEqual([other.objectID, sampleStory.objectID]);
+    await act(async () => { second.resolve(); retry.resolve(); });
+    expect(result.current.pendingIds).toEqual([]);
+  });
+
+  it.each([false, true])("retries the original operation after an ambiguous response and revalidation (saved=%s)", async (saved) => {
+    mockedToggleBookmark.mockRejectedValueOnce(new Error("response lost"));
+    const { result, rerender } = renderBookmarks(saved ? [sampleStory.objectID] : []);
+    await act(async () => result.current.toggle(sampleStory));
+    // The write committed despite the failed response. A later refresh reveals it.
+    rerender({ ids: saved ? [] : [sampleStory.objectID] });
+    await act(async () => result.current.retryFailed(sampleStory.objectID));
+    expect(mockedToggleBookmark).toHaveBeenNthCalledWith(2, sampleStory, saved);
+  });
+
+  it("a fresh primary toggle follows the revalidated saved state after a lost response", async () => {
+    mockedToggleBookmark.mockRejectedValueOnce(new Error("response lost"));
+    const { result, rerender } = renderBookmarks();
+    await act(async () => result.current.toggle(sampleStory));
+    rerender({ ids: [sampleStory.objectID] });
+    await act(async () => result.current.toggle(sampleStory));
+    expect(mockedToggleBookmark).toHaveBeenNthCalledWith(2, sampleStory, true);
+  });
+
+  it("replays a pending save idempotently when revalidation confirms it before settlement", async () => {
+    const pending = deferred();
+    mockedToggleBookmark.mockReturnValue(pending.promise);
+    const { result, rerender } = renderBookmarks();
+    act(() => result.current.toggle(sampleStory));
+    rerender({ ids: [sampleStory.objectID, "other"] });
+    expect(result.current.savedIds.filter((id) => id === sampleStory.objectID)).toHaveLength(1);
+    expect(result.current.savedIds).toContain("other");
+    await act(async () => pending.resolve());
+    expect(result.current.savedIds).toEqual([sampleStory.objectID, "other"]);
+  });
+
+  it("ignores retry requests for unknown stories without clearing another story's failure", async () => {
+    mockedToggleBookmark.mockRejectedValueOnce(new Error("offline"));
+    const { result } = renderBookmarks();
+    await act(async () => result.current.toggle(sampleStory));
+    const error = result.current.errors[sampleStory.objectID];
+    act(() => result.current.retryFailed("unknown-story"));
+    expect(mockedToggleBookmark).toHaveBeenCalledTimes(1);
+    expect(result.current.pendingIds).toEqual([]);
+    expect(result.current.errors[sampleStory.objectID]).toBe(error);
+    expect(result.current.savedIds).toEqual([]);
+  });
+
 });

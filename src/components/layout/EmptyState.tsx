@@ -25,7 +25,7 @@ export function EmptyState({ icon, title, description, children, className }: Em
           {icon}
         </EmptyMedia>
         <EmptyTitle className="text-slate-200">{title}</EmptyTitle>
-        <EmptyDescription className="text-slate-500">{description}</EmptyDescription>
+        <EmptyDescription className="text-muted-foreground">{description}</EmptyDescription>
       </EmptyHeader>
       <EmptyContent>{children}</EmptyContent>
     </Empty>

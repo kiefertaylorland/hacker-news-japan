@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useOptimistic, useRef, useTransition } from "react";
+import { useCallback, useOptimistic, useRef, useState, useTransition } from "react";
 import { toggleBookmark } from "@/lib/bookmarks/actions";
 import type { HNStory } from "@/lib/types";
 
@@ -11,31 +11,58 @@ import type { HNStory } from "@/lib/types";
  */
 export function useOptimisticBookmarks(savedIds: string[]) {
   const [, startTransition] = useTransition();
-  const pendingSavedByStory = useRef<Record<string, boolean>>({});
+  const pendingSavedByStory = useRef(new Set<string>());
+  const failedStories = useRef(new Map<string, { story: HNStory; isSaved: boolean }>());
+  const [pendingIds, setPendingIds] = useState<string[]>([]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [message, setMessage] = useState("");
   const [optimisticIds, toggleId] = useOptimistic(
     savedIds,
-    (current: string[], objectID: string) =>
-      current.includes(objectID) ? current.filter((id) => id !== objectID) : [...current, objectID]
+    (current: string[], { id, saved }: { id: string; saved: boolean }) =>
+      saved ? [...current.filter((value) => value !== id), id] : current.filter((value) => value !== id)
   );
 
-  // Stable identity so memoized story cards do not rerender on unrelated state changes.
-  const toggle = useCallback(
-    (story: HNStory) => {
-      const isSaved = pendingSavedByStory.current[story.objectID] ?? optimisticIds.includes(story.objectID);
-      pendingSavedByStory.current[story.objectID] = !isSaved;
+  const mutate = useCallback(
+    (story: HNStory, isSaved: boolean) => {
+      const id = story.objectID;
+      if (pendingSavedByStory.current.has(id)) return;
+      pendingSavedByStory.current.add(id);
+      failedStories.current.delete(id);
+      setPendingIds([...pendingSavedByStory.current]);
+      setErrors((current) => {
+        const next = { ...current };
+        delete next[id];
+        return next;
+      });
+      setMessage(isSaved ? "Removing bookmark…" : "Saving story…");
       startTransition(async () => {
-        toggleId(story.objectID);
+        toggleId({ id, saved: !isSaved });
         try {
           await toggleBookmark(story, isSaved);
+          setMessage(isSaved ? "Bookmark removed." : "Story saved.");
+        } catch {
+          toggleId({ id, saved: isSaved });
+          failedStories.current.set(id, { story, isSaved });
+          setErrors((current) => ({ ...current, [id]: `Could not update bookmark for "${story.title}". Your previous saved state has been restored.` }));
+          setMessage("");
         } finally {
-          if (pendingSavedByStory.current[story.objectID] === !isSaved) {
-            delete pendingSavedByStory.current[story.objectID];
-          }
+          pendingSavedByStory.current.delete(id);
+          setPendingIds([...pendingSavedByStory.current]);
         }
       });
     },
-    [optimisticIds, startTransition, toggleId]
+    [startTransition, toggleId]
   );
 
-  return { savedIds: optimisticIds, toggle };
+  const toggle = useCallback((story: HNStory) => {
+    mutate(story, optimisticIds.includes(story.objectID));
+  }, [mutate, optimisticIds]);
+
+  // A retry repeats the failed intent; a fresh toggle follows the current label.
+  const retryFailed = useCallback((id: string) => {
+    const failed = failedStories.current.get(id);
+    if (failed) mutate(failed.story, failed.isSaved);
+  }, [mutate]);
+
+  return { savedIds: optimisticIds, toggle, pendingIds, errors, message, retryFailed };
 }
