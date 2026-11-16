@@ -3,7 +3,7 @@ import Link from "next/link";
 import { NetworkStatus } from "./NetworkStatus";
 
 /** Full-height page wrapper with the shared max-width container and vertical rhythm. */
-export function PageShell({ children }: { children: ReactNode }) {
+export function PageShell({ children, activePage }: { children: ReactNode; activePage?: string }) {
   return (
     <div className="min-h-screen">
       <a href="#main-content" className="skip-link">Skip to content</a>
@@ -14,9 +14,9 @@ export function PageShell({ children }: { children: ReactNode }) {
             <span>Hacker News Japan</span>
           </Link>
           <nav aria-label="Main navigation" className="flex flex-wrap gap-1 text-sm">
-            <Link className="nav-link" href="/">Search</Link>
-            <Link className="nav-link" href="/saved">Saved</Link>
-            <Link className="nav-link" href="/profile">Profile</Link>
+            <Link className="nav-link" href="/" aria-current={activePage === "/" ? "page" : undefined}>Search</Link>
+            <Link className="nav-link" href="/saved" aria-current={activePage === "/saved" ? "page" : undefined}>Saved</Link>
+            <Link className="nav-link" href="/profile" aria-current={activePage === "/profile" ? "page" : undefined}>Profile</Link>
           </nav>
         </div>
       </div>

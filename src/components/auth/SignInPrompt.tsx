@@ -14,7 +14,7 @@ interface SignInPromptProps {
 /** Keep signed-out visitors oriented while offering the protected action. */
 export function SignInPrompt({ icon, title, description, next }: SignInPromptProps) {
   return (
-    <PageShell>
+    <PageShell activePage={next}>
       <EmptyState className="mx-auto max-w-xl" icon={icon} title={title} description={description}>
         <UserMenu user={null} next={next} />
         <Link href="/" className="inline-flex min-h-11 items-center text-sm text-hn hover:underline">Browse stories</Link>

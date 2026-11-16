@@ -39,7 +39,7 @@ export function SearchBar({
         className="text-base text-slate-100 placeholder:text-slate-400 sm:text-[0.9375rem]"
       />
       {value && (
-        <InputGroupAddon align="inline-end">
+        <InputGroupAddon align="inline-end" className="py-0">
           <InputGroupButton
             size="icon-xs"
             aria-label="Clear search"
@@ -48,7 +48,7 @@ export function SearchBar({
               // Stryker disable next-line OptionalChaining: this button only renders alongside the mounted input, so the ref is never null here.
               inputRef.current?.focus();
             }}
-            className="size-11 sm:size-6 text-slate-400 hover:bg-white/10 hover:text-slate-100"
+            className="size-11 text-slate-400 hover:bg-white/10 hover:text-slate-100"
           >
             <XIcon />
           </InputGroupButton>
