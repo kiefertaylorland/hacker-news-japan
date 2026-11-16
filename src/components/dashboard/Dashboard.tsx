@@ -84,13 +84,13 @@ export function Dashboard({
   const stories = results?.hits || null;
 
   return (
-    <PageShell>
+    <PageShell activePage="/">
       <DashboardHeader actions={<UserMenu user={user} />} />
 
       <section aria-label="Search controls" className="editorial-panel space-y-4 p-3 sm:p-4">
         <SearchBar value={query} onChange={setQuery} />
 
-        <div className="flex flex-col gap-4 border-t border-white/8 pt-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-4 border-t border-white/8 pt-4">
           <FilterBar
             storyType={storyType}
             dateRange={dateRange}

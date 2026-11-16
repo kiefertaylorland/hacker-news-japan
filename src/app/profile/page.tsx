@@ -29,7 +29,7 @@ interface Props { searchParams: Promise<{ view?: string | string[] }> }
 
 export default function ProfilePage({ searchParams }: Props) {
   return (
-    <Suspense fallback={<PageShell><div role="status" className="space-y-5"><span className="sr-only">Loading profile…</span><Skeleton className="h-24 w-full" /><Skeleton className="h-40 w-full" /></div></PageShell>}>
+    <Suspense fallback={<PageShell activePage="/profile"><div role="status" className="space-y-5"><span className="sr-only">Loading profile…</span><Skeleton className="h-24 w-full" /><Skeleton className="h-40 w-full" /></div></PageShell>}>
       <ProfileContent searchParams={searchParams} />
     </Suspense>
   );
@@ -46,7 +46,7 @@ async function ProfileContent({ searchParams }: Props) {
     [createdAt, list] = await Promise.all([getAccountCreatedAt(), view && VIEWS[view].load(user.id)]);
   } catch {
     const href = view ? `/profile?view=${view}` : "/profile";
-    return <PageShell><h1 className="text-3xl font-semibold">Profile unavailable</h1><ErrorAlert>Could not load your profile. Please try again.</ErrorAlert><a href={href} className="inline-flex min-h-11 items-center text-hn hover:underline">Retry</a></PageShell>;
+    return <PageShell activePage="/profile"><h1 className="text-3xl font-semibold">Profile unavailable</h1><ErrorAlert>Could not load your profile. Please try again.</ErrorAlert><a href={href} className="inline-flex min-h-11 items-center text-hn hover:underline">Retry</a></PageShell>;
   }
   const viewLink = (target: View, label: string) => (
     <Link href={`/profile?view=${target}`} aria-current={view === target ? "page" : undefined}
@@ -56,7 +56,7 @@ async function ProfileContent({ searchParams }: Props) {
     <tr><th scope="row" className="w-20 pr-4 text-left align-top font-normal text-muted-foreground">{label}</th><td className="min-w-0 [overflow-wrap:anywhere]">{value}</td></tr>
   );
   return (
-    <PageShell>
+    <PageShell activePage="/profile">
       <PageHeader
         eyebrow={<Link href="/" className="inline-flex min-h-11 items-center text-sm text-hn hover:underline">Back to search</Link>}
         title={<h1 className="text-3xl font-semibold tracking-tight">Profile</h1>}

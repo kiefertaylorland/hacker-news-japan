@@ -34,7 +34,7 @@ export function SavedStories({ user, stories, recommendations }: SavedStoriesPro
   const recommendationStories = recommendations?.filter((story) => !bookmarks.savedIds.includes(story.objectID)) ?? [];
 
   return (
-    <PageShell>
+    <PageShell activePage="/saved">
       <PageHeader
         eyebrow={
           <Link

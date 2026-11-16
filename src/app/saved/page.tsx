@@ -25,7 +25,7 @@ export default function SavedPage() {
 }
 
 function SavedSkeleton() {
-  return <PageShell>
+  return <PageShell activePage="/saved">
     <PageHeader eyebrow="Your reading list" title={<h1 className="text-4xl font-bold tracking-tight">Saved stories</h1>}
       description="Stories you bookmarked, newest first." actions={<Skeleton className="h-11 w-40" />} />
     <div className="min-h-6" />
@@ -51,7 +51,7 @@ async function SavedContent() {
   try {
     stories = await listBookmarks(user.id);
   } catch {
-    return <PageShell>
+    return <PageShell activePage="/saved">
       <PageHeader eyebrow="Your reading list" title={<h1 className="text-4xl font-bold tracking-tight">Saved stories</h1>}
         description="Your bookmarks are tied to your GitHub account." actions={<UserMenu user={user} next="/saved" />} />
       <ErrorAlert>Could not load saved stories. Your bookmarks have not been changed.</ErrorAlert>
