@@ -218,8 +218,15 @@
 @media (hover: hover) and (pointer: fine) {
   .story-motion:hover { background-color: hsl(var(--accent)); }
 }
-.reading-surface { max-width: 48rem; line-height: 1.75; }
+.reading-surface { max-width: 48rem; line-height: 1.75; overflow-wrap: anywhere; }
 .reading-surface p, .reading-surface li { overflow-wrap: anywhere; }
+/* Keep replies separate from their parent without exhausting narrow screens.
+   Deeper replies retain their nested list semantics after indentation stops. */
+.comment-thread .comment-thread:not(:empty) { margin-top: 1.25rem; }
+.comment-thread .comment-thread .comment-thread .comment-thread > li {
+  border-left: 0;
+  padding-left: 0;
+}
 @media (prefers-reduced-motion: no-preference) {
   .nav-link, .story-row { transition: background-color var(--motion-normal) var(--motion-ease), color var(--motion-fast) var(--motion-ease); }
 }

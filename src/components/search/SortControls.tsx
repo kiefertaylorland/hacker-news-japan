@@ -11,8 +11,8 @@ interface SortControlsProps {
 
 export function SortControls({ sortBy, onChange }: SortControlsProps) {
   return (
-    <div className="flex flex-wrap items-center gap-2 text-xs lg:shrink-0">
-      <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
+    <div className="flex flex-wrap items-center gap-2 text-sm lg:shrink-0">
+      <span className="font-medium text-muted-foreground">
         Sort:
       </span>
       <OptionToggleGroup

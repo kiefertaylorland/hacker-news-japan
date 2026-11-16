@@ -17,9 +17,10 @@ export function DashboardSkeleton() {
         <div />
       </div>
 
-      <div className="min-h-6" />
       {/* Results header skeleton */}
       <Skeleton className="h-6 w-48" />
+      {/* Match the bookmark-status space reserved by the loaded dashboard. */}
+      <div className="min-h-6" />
 
       {/* Grid skeleton */}
       <StoryGrid stories={null} isLoading />

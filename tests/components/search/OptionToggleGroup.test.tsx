@@ -30,7 +30,7 @@ describe("OptionToggleGroup", () => {
       "border",
       "border-transparent",
       "bg-transparent",
-      "text-xs",
+      "text-sm",
       "font-medium",
       "text-slate-400"
     );
