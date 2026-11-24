@@ -44,6 +44,13 @@
   --color-hn-950: #471d00;
   --color-hn: #ff6600;
 
+  /* Neutral greys replace the blue-tinted slate ramp used for text. */
+  --color-slate-100: #ededed;
+  --color-slate-200: #d4d4d4;
+  --color-slate-300: #b8b8b8;
+  --color-slate-400: #a1a1a1;
+
+  --radius-xl: calc(var(--radius) + 2px);
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
@@ -51,8 +58,10 @@
   --animate-fade-in: fadeIn 0.3s ease-in-out;
   --animate-slide-up: slideUp 0.4s ease-out;
 
+  --font-mono:
+    'Geist Mono Variable', Noto Sans JP, ui-monospace, SFMono-Regular, Menlo, monospace;
   --font-sans:
-    Inter, Noto Sans JP, ui-sans-serif, system-ui, sans-serif,
+    'Geist Variable', Noto Sans JP, ui-sans-serif, system-ui, sans-serif,
     'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 
   @keyframes fadeIn {
@@ -77,43 +86,45 @@
 
 @layer base {
   /* Dark-only theme. Tokens drive every shadcn primitive; the `.dark` class
-     stays on <html> so shadcn `dark:` variants still fire. */
+     stays on <html> so shadcn `dark:` variants still fire.
+     Values follow the Kiefer Land Design System (`hn` theme): black ground,
+     neutral greys, hairline borders, with Hacker News orange as the one accent. */
   :root {
     color-scheme: dark;
 
-    --background: 240 6% 7%;
-    --foreground: 214 32% 91%;
+    --background: 0 0% 0%;
+    --foreground: 0 0% 93%;
 
-    --card: 240 6% 10%;
-    --card-foreground: 214 32% 91%;
+    --card: 0 0% 4%;
+    --card-foreground: 0 0% 93%;
 
-    --popover: 240 6% 11%;
-    --popover-foreground: 214 32% 91%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 93%;
 
     --primary: 24 100% 50%;
-    --primary-foreground: 0 0% 8%;
+    --primary-foreground: 0 0% 0%;
 
-    --secondary: 240 5% 16%;
-    --secondary-foreground: 214 32% 91%;
+    --secondary: 0 0% 8%;
+    --secondary-foreground: 0 0% 93%;
 
-    --muted: 240 5% 16%;
-    --muted-foreground: 240 5% 72%;
+    --muted: 0 0% 8%;
+    --muted-foreground: 0 0% 63%;
     --motion-fast: 140ms;
     --motion-normal: 180ms;
     --motion-slow: 220ms;
     --motion-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
 
-    --accent: 240 5% 18%;
-    --accent-foreground: 214 32% 96%;
+    --accent: 0 0% 8%;
+    --accent-foreground: 0 0% 93%;
 
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 100% 68%;
+    --destructive-foreground: 0 0% 0%;
 
-    --border: 240 6% 20%;
-    --input: 240 6% 22%;
+    --border: 0 0% 15%;
+    --input: 0 0% 40%;
     --ring: 24 100% 50%;
 
-    --radius: 0.625rem;
+    --radius: 0.125rem;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -137,6 +148,17 @@
   body {
     @apply text-foreground;
     background: hsl(var(--background));
+  }
+
+  /* Mono is the interface voice; story and comment text stays in the sans. */
+  h1,
+  h2,
+  button,
+  label,
+  input,
+  select,
+  .nav-link {
+    font-family: var(--font-mono);
   }
 }
 
